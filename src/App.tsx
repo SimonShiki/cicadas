@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import Navigation from './components/navigation';
+import NowPlaying from './components/now-playing';
 
 function App () {
     const location = useLocation();
@@ -25,6 +26,7 @@ function App () {
                     <Outlet />
                 </div>
             </div>
+            <NowPlaying />
         </div>
     );
 }

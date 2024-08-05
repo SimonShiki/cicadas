@@ -15,11 +15,15 @@ crate-type = ["lib", "cdylib", "staticlib"]
 tauri-build = { version = "2.0.0-rc", features = [] }
 
 [dependencies]
-tauri = { version = "2.0.0-rc", features = [] }
+tauri = { version = "2.0.0-rc", features = ["unstable"] }
 tauri-plugin-shell = "2.0.0-rc"
 serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+thiserror = "1.0"
 serde_json = "1"
 tauri-plugin-fs = "2.0.0-rc.0"
 tauri-plugin-store = "2.0.0-rc.0"
 tauri-plugin-dialog = "2.0.0-rc.0"
-rodio = "0.15"
+rodio = "0.19"
+souvlaki = "0.6"
+base64 = "0.22.1"

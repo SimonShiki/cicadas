@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren } from 'react';
 
 interface BadgeProps extends PropsWithChildren {
     variant: 'primary' | 'secondary';

@@ -1,12 +1,12 @@
-import { StorageConfig, storagesJotai } from "../jotais/settings";
-import sharedStore from "../jotais/shared-store";
-import { AbstractStorage, Song } from "../jotais/storage";
-import { focusAtom } from "jotai-optics";
+import { StorageConfig, storagesJotai } from '../jotais/settings';
+import sharedStore from '../jotais/shared-store';
+import { AbstractStorage, Song } from '../jotais/storage';
+import { focusAtom } from 'jotai-optics';
 import { readDir, readFile } from '@tauri-apps/plugin-fs';
 import { resolve, audioDir } from '@tauri-apps/api/path';
 import { MetaFile } from 'music-metadata-wasm';
-import { extractExtName, createDataUrl, backendStorage } from "../utils/local-utitity";
-import { scanningJotai } from "../jotais/storage";
+import { extractExtName, createDataUrl, backendStorage } from '../utils/local-utitity';
+import { scanningJotai } from '../jotais/storage';
 
 type SortOrder = 'add_asc' | 'add_desc' | 'a-z' | 'z-a';
 
@@ -47,6 +47,7 @@ export class Local implements AbstractStorage<SortOrder> {
         if (cache.length < 1) {
             await this.scan();
             await backendStorage.set('cachedLocalSong', this.songList);
+            backendStorage.save();
             return;
         }
         this.songList = cache;

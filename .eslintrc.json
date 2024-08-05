@@ -45,6 +45,7 @@
     "no-useless-return": "error",
     "no-var": "error",
     "comma-spacing": "error",
+    "quotes": ["error", "single"],
     "func-call-spacing": "error",
     "dot-location": [
         "error",

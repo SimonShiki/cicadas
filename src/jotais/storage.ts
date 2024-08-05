@@ -1,7 +1,7 @@
-import type { Local } from "../storages/local";
-import local from "../storages/local";
-import { atom } from "jotai";
-import { focusAtom } from "jotai-optics";
+import type { Local } from '../storages/local';
+import local from '../storages/local';
+import { atom } from 'jotai';
+import { focusAtom } from 'jotai-optics';
 
 export interface Song<From extends string> {
     id: string;

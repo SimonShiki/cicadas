@@ -85,7 +85,7 @@ const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider ({
             ref={mergeRefs(sliderRef, ref)}
             onMouseDown={handleMouseDown}
         >
-            <div className="absolute top-1/2 left-0 w-full h-1 -translate-y-1/2 bg-bg-sec dark:bg-bg-dark-sec rounded-full">
+            <div className="absolute top-1/2 left-0 w-full h-1 -translate-y-1/2 bg-outline-sec dark:bg-bg-dark-sec rounded-full">
                 <div
                     className="absolute top-0 left-0 h-full bg-fg-pri dark:bg-fg-dark-pri rounded-full"
                     style={{ width: `${getPercentage()}%` }}
@@ -93,13 +93,15 @@ const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider ({
             </div>
             <div
                 ref={thumbRef}
-                className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-(2 solid fg-pri) dark:border-fg-dark-pri shadow-md ${disabled ? '' : 'hover:scale-110'
+                className={`group absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-(1 solid outline-pri) border-b-(solid outline-sec) dark:border-fg-dark-pri flex items-center justify-center shadow-md ${disabled ? '' : 'hover:scale-110'
                 } transition-transform duration-100`}
                 style={{
                     left: `calc(${getPercentage()}% - 0.5rem)`,
                     transform: `translate(-50%, -50%) ${isDragging ? 'scale(1.1)' : ''}`,
                 }}
-            ></div>
+            >
+                <div className={`w-2.4 h-2.4 ${isDragging ? '!w-2 !h-2': ''} group-hover:w-3 group-hover:h-3 transition-all transition-ease-out rounded-full bg-fg-pri`} />
+            </div>
         </div>
     );
 });

@@ -42,7 +42,7 @@ const Scrollable: React.FC<ScrollableProps> = ({ children, showButton, className
         <div className='relative'>
             {isScrollable && leftOpacity > 0 && (
                 <>
-                    <div className={`absolute z-2 left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-bg-pri dark:from-bg-dark-pri to-transparent pointer-events-none transition-opacity`} style={{ opacity: leftOpacity }} />
+                    <div className={'absolute z-2 left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-bg-pri dark:from-bg-dark-pri to-transparent pointer-events-none transition-opacity'} style={{ opacity: leftOpacity }} />
                     {showButton && (
                         <div className='absolute z-3 left-2 top-50% bottom-50% flex items-center' style={{ opacity: leftOpacity }}>
                             <Button rounded iconOnly className='w-6 h-6 flex items-center justify-center' onClick={() => {
@@ -66,7 +66,7 @@ const Scrollable: React.FC<ScrollableProps> = ({ children, showButton, className
             </div>
             {isScrollable && rightOpacity > 0 && (
                 <>
-                    <div className={`absolute z-2 right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-bg-pri dark:from-bg-dark-pri to-transparent pointer-events-none transition-opacity`} style={{opacity: rightOpacity}} />
+                    <div className={'absolute z-2 right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-bg-pri dark:from-bg-dark-pri to-transparent pointer-events-none transition-opacity'} style={{opacity: rightOpacity}} />
                     {showButton && (
                         <div className='absolute z-3 right-2 top-50% bottom-50% flex items-center' style={{ opacity: rightOpacity }}>
                             <Button rounded iconOnly className='w-6 h-6 flex items-center justify-center' onClick={() => {

@@ -1,6 +1,6 @@
-import { PropsWithChildren, useEffect, useState } from "react";
-import Portal from "./portal";
-import { miSans, notoSans } from "@/utils/fonts";
+import { PropsWithChildren, useEffect, useState } from 'react';
+import Portal from './portal';
+import { miSans, notoSans } from '@/utils/fonts';
 
 interface ModalProps extends PropsWithChildren {
     open: boolean;

@@ -1,4 +1,4 @@
-import { ChangeEventHandler, FocusEventHandler, HTMLInputTypeAttribute } from "react";
+import { ChangeEventHandler, FocusEventHandler, HTMLInputTypeAttribute } from 'react';
 
 interface InputProps {
     before?: React.ReactNode;

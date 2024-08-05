@@ -1,4 +1,4 @@
-import React, { ChangeEventHandler, FocusEventHandler } from "react";
+import React, { ChangeEventHandler, FocusEventHandler } from 'react';
 
 interface TextareaProps {
     placeholder?: string;

@@ -36,7 +36,7 @@ export default function Parallax ({
     };
 
     return (
-        <div className={`overflow-hidden h-fit`} ref={containerRef}>
+        <div className={'overflow-hidden h-fit'} ref={containerRef}>
             <div className={className} style={parallaxStyle}>
                 {children}
             </div>

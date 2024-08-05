@@ -1,12 +1,12 @@
-import { scanningJotai, Song } from "../jotais/storage";
-import { useAtomValue } from "jotai";
-import local from "../storages/local";
-import { useEffect, useState } from "react";
-import SongItem from "../components/song-item";
-import Button from "../components/base/button";
-import Select from "../components/base/select";
-import Input from "../components/base/input";
-import { Virtuoso } from "react-virtuoso";
+import { scanningJotai, Song } from '../jotais/storage';
+import { useAtomValue } from 'jotai';
+import local from '../storages/local';
+import { useEffect, useState } from 'react';
+import SongItem from '../components/song-item';
+import Button from '../components/base/button';
+import Select from '../components/base/select';
+import Input from '../components/base/input';
+import { Virtuoso } from 'react-virtuoso';
 
 export default function Local () {
     const scanning = useAtomValue(scanningJotai);

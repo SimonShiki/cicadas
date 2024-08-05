@@ -1,5 +1,5 @@
-import { focusAtom } from "jotai-optics";
-import { atomWithStorage } from "jotai/utils";
+import { focusAtom } from 'jotai-optics';
+import { atomWithStorage } from 'jotai/utils';
 
 export interface StorageConfig<Idenfiter extends string> {
     identifer: Idenfiter;
