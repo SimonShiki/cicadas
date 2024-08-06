@@ -6,9 +6,12 @@ use std::time::Duration;
 use tauri::{Emitter, Manager, State};
 use std::path::Path;
 use serde::{Deserialize, Serialize};
-use base64;
 use thiserror::Error;
 use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+};
 use souvlaki::{MediaControls, MediaMetadata, MediaPlayback, MediaPosition, PlatformConfig};
 
 type Result<T> = std::result::Result<T, AppError>;
@@ -89,9 +92,9 @@ impl Seek for StreamingSource {
 }
 
 #[tauri::command]
-async fn init_media_controls(app: tauri::AppHandle, state: State<'_, AudioState>) -> Result<()> {
+async fn init_media_controls(app: tauri::AppHandle, window: tauri::Window, state: State<'_, AudioState>) -> Result<()> {
     state.init_once.call_once(|| {
-        let handle = app.get_window("main").unwrap().hwnd().unwrap();
+        let handle = window.hwnd().unwrap();
         let hwnd_pointer = Some(handle.0 as _);
         let config = PlatformConfig {
             dbus_name: "cicadas",
@@ -131,38 +134,15 @@ async fn init_media_controls(app: tauri::AppHandle, state: State<'_, AudioState>
 #[tauri::command]
 async fn update_media_metadata(state: State<'_, AudioState>, metadata: MediaMetadataInput) -> Result<()> {
     if let Some(controls) = &mut *state.media_controls.lock().unwrap() {
-        let mut media_metadata = MediaMetadata {
-            title: Some(&metadata.title),
-            artist: Some(&metadata.artist),
-            album: Some(&metadata.album),
-            cover_url: None,
-            ..Default::default()
-        };
-
-        if let Some(cover_data_url) = &metadata.cover {
-            if let Some(cover_data) = parse_data_url(cover_data_url)? {
-                // Store the cover data in the AudioState
-                *state.cover_data.lock().unwrap() = cover_data;
-                // Use a placeholder URL that refers to the stored cover data
-                media_metadata.cover_url = Some("memory://cover");
-            }
-        }
+        let mut media_metadata = MediaMetadata::default();
+        media_metadata.title = Some(&metadata.title);
+        media_metadata.artist = Some(&metadata.artist);
+        media_metadata.album = Some(&metadata.album);
+        media_metadata.cover_url = Some(&metadata.cover);
 
         controls.set_metadata(media_metadata)?;
     }
     Ok(())
-}
-
-fn parse_data_url(data_url: &str) -> Result<Option<Vec<u8>>> {
-    if data_url.starts_with("data:image/") {
-        let parts: Vec<&str> = data_url.split(',').collect();
-        if parts.len() == 2 {
-            let base64_data = parts[1];
-            return Ok(Some(base64::decode(base64_data)
-                .map_err(|e| AppError::InvalidDataUrl(e.to_string()))?));
-        }
-    }
-    Ok(None)
 }
 
 #[tauri::command]
@@ -196,7 +176,6 @@ struct AudioState {
     is_stream_ended: Arc<AtomicBool>,
     media_controls: Arc<Mutex<Option<MediaControls>>>,
     init_once: Once,
-    cover_data: Arc<Mutex<Vec<u8>>>,
 }
 
 
@@ -205,10 +184,8 @@ struct MediaMetadataInput {
     title: String,
     artist: String,
     album: String,
-    cover: Option<String>, // Data URL for the cover image
+    cover: String,
 }
-
-static GLOBAL_INIT: Once = Once::new();
 
 struct StreamingDecoder(Decoder<StreamingSource>);
 
@@ -258,8 +235,6 @@ enum AppError {
     InvalidOperation(String),
     #[error("Failed to dispatch media control event: {0}")]
     MediaControlsError(String),
-    #[error("Invalid data URL: {0}")]
-    InvalidDataUrl(String),
 }
 
 #[tauri::command]
@@ -387,7 +362,6 @@ pub async fn run() {
         is_stream_ended: Arc::new(AtomicBool::new(false)),
         media_controls: Arc::new(Mutex::new(None)),
         init_once: Once::new(),
-        cover_data: Arc::new(Mutex::new(Vec::new())),
     };
 
     tauri::Builder::default()
@@ -396,6 +370,57 @@ pub async fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .manage(audio_state)
+        .setup(|app| {
+            let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
+            let pause_resume = MenuItemBuilder::with_id("pause_resume", "Pause/Resume").build(app)?;
+            let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let menu = MenuBuilder::new(app).items(&[&show, &pause_resume, &quit]).build()?;
+            
+            let tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .on_menu_event(move |app, event| {
+                    match event.id().as_ref() {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "pause_resume" => {
+                            let _ = app.emit("media-control", "toggle");
+                        }
+                        "quit" => {
+                            std::process::exit(0);
+                        }
+                        _ => (),
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
+            tray.set_title(Some("Cicadas"))?;
+            tray.set_tooltip(Some("Cicadas"))?;
+
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                window.hide().unwrap();
+                api.prevent_close();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             play_local_file,
             start_streaming,

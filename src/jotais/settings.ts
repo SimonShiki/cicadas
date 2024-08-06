@@ -13,4 +13,4 @@ export const settingsJotai = atomWithStorage<Setting>('settings', {
     storages: {}
 });
 
-export const storagesJotai = focusAtom(settingsJotai, (optic) => optic.prop('storages'));
+export const storagesConfigJotai = focusAtom(settingsJotai, (optic) => optic.prop('storages'));

@@ -13,7 +13,7 @@ export interface NowPlaying {
 }
 
 export const backendPlayingJotai = atom(false);
-export const nowPlayingJotai = atom<NowPlaying>({ volume: 1, playing: false, playmode: 'single-recycle'});
+export const nowPlayingJotai = atom<NowPlaying>({ volume: 1, playing: false, playmode: 'list-recycle'});
 export const nowPlayingBarJotai = atom((get) => !!get(nowPlayingJotai).song);
 export const nowPlayingPageJotai = atom(false);
 export const playlistJotai = atom<Song<string>[]>([]);

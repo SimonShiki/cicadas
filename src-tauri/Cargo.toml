@@ -1,8 +1,8 @@
 [package]
 name = "cicadas"
 version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "Cicidas"
+authors = ["Simon Shiki"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,11 +11,21 @@ edition = "2021"
 name = "cicadas_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = "s" # Prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed
+
 [build-dependencies]
 tauri-build = { version = "2.0.0-rc", features = [] }
 
 [dependencies]
-tauri = { version = "2.0.0-rc", features = ["unstable"] }
+tauri = { version = "2.0.0-rc", features = ["tray-icon"] }
 tauri-plugin-shell = "2.0.0-rc"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
@@ -26,4 +36,3 @@ tauri-plugin-store = "2.0.0-rc.0"
 tauri-plugin-dialog = "2.0.0-rc.0"
 rodio = "0.19"
 souvlaki = "0.6"
-base64 = "0.22.1"

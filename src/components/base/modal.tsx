@@ -1,6 +1,5 @@
 import { PropsWithChildren, useEffect, useState } from 'react';
 import Portal from './portal';
-import { miSans, notoSans } from '@/utils/fonts';
 
 interface ModalProps extends PropsWithChildren {
     open: boolean;
@@ -33,7 +32,7 @@ export default function Modal (props: ModalProps) {
                     if (props.uncancellable) return;
                     props.onClose?.();
                 }}
-                className={`${notoSans.className} ${miSans.className} fixed inset-0 w-full h-full transition-colors duration-300 ${props.open ? 'z-700 bg-black bg-opacity-50 visible' : 'invisible pointer-events-none bg-transparent'
+                className={`fixed inset-0 w-full h-full transition-colors duration-300 ${props.open ? 'z-700 bg-black bg-opacity-50 visible' : 'invisible pointer-events-none bg-transparent'
                 } ${props.parentClassName ?? ''}`}
             >
                 <div

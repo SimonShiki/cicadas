@@ -1,5 +1,4 @@
-import { useMount } from 'ahooks';
-import React, { PropsWithChildren, useState, useRef } from 'react';
+import { PropsWithChildren, useState, useRef, useEffect } from 'react';
 
 interface ParallaxProps extends PropsWithChildren {
     speed?: number;
@@ -15,7 +14,7 @@ export default function Parallax ({
     const [initialTop, setInitialTop] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    useMount(() => {
+    useEffect(() => {
         const handleScroll = () => {
             setScrollY(window.scrollY);
         };
@@ -29,7 +28,7 @@ export default function Parallax ({
         return () => {
             window.removeEventListener('scroll', handleScroll);
         };
-    });
+    }, []);
 
     const parallaxStyle = {
         transform: `translateY(${(scrollY - initialTop) * speed}px)`

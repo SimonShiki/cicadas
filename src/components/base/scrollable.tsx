@@ -1,5 +1,4 @@
-import { useMount } from 'ahooks';
-import React, { PropsWithChildren, useRef, useState } from 'react';
+import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import Button from './button';
 
 interface ScrollableProps extends PropsWithChildren {
@@ -13,7 +12,7 @@ const Scrollable: React.FC<ScrollableProps> = ({ children, showButton, className
     const [leftOpacity, setLeftOpacity] = useState(0);
     const [rightOpacity, setRightOpacity] = useState(100);
 
-    useMount(() => {
+    useEffect(() => {
         const checkScrollable = () => {
             if (scrollRef.current) {
                 const { scrollWidth, clientWidth } = scrollRef.current;
@@ -28,7 +27,7 @@ const Scrollable: React.FC<ScrollableProps> = ({ children, showButton, className
         return () => {
             window.removeEventListener('resize', checkScrollable);
         };
-    });
+    }, []);
 
     const handleScroll = () => {
         if (scrollRef.current) {

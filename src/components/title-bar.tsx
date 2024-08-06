@@ -1,30 +1,39 @@
-import { getCurrentWindow, Window } from '@tauri-apps/api/window';
 import { useAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { nowPlayingPageJotai } from '../jotais/play';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
-let appWindow: Window;
-if (typeof window === 'object') {
-    appWindow = getCurrentWindow();
-}
+const appWindow = getCurrentWindow();
 
 export default function TitleBar () {
     const [focus, setFocus] = useState(false);
     const [maximized, setMaximized] = useState(false);
     const [fullscreen, setFullscreen] = useAtom(nowPlayingPageJotai);
     useEffect(() => {
-        appWindow.onFocusChanged(({ payload: focused }) => {
-            setFocus(focused);
-        });
-        appWindow.onResized(async () => {
+        const unlistens: Promise<UnlistenFn>[] = [];
+        unlistens.push(listen('tauri://focus', () => {
+            setFocus(true);
+        }));
+        unlistens.push(listen('tauri://blur', () => {
+            setFocus(false);
+        }));
+        unlistens.push(listen('tauri://resize', async () => {
             setMaximized(await appWindow.isMaximized());
-        });
+        }));
         appWindow.isMaximized().then((maximized) => {
             setMaximized(maximized);
         });
         appWindow.isFocused().then((focused) => {
             setFocus(focused);
         });
+        return () => {
+            Promise.all(unlistens).then((unlistenFns) => {
+                for (const unlistenFn of unlistenFns) {
+                    unlistenFn();
+                }
+            });
+        };
     }, []);
     return (
         <div data-tauri-drag-region className='sticky z-1000 flex items-center w-full h-9 top-0 left-0 right-0 mb-4'>

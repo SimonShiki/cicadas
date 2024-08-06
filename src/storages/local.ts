@@ -1,12 +1,12 @@
-import { StorageConfig, storagesJotai } from '../jotais/settings';
+import { StorageConfig, storagesConfigJotai } from '../jotais/settings';
 import sharedStore from '../jotais/shared-store';
-import { AbstractStorage, Song } from '../jotais/storage';
+import { AbstractStorage, Song, storagesJotai } from '../jotais/storage';
 import { focusAtom } from 'jotai-optics';
 import { readDir, readFile } from '@tauri-apps/plugin-fs';
 import { resolve, audioDir } from '@tauri-apps/api/path';
 import { MetaFile } from 'music-metadata-wasm';
 import { extractExtName, createDataUrl, backendStorage } from '../utils/local-utitity';
-import { scanningJotai } from '../jotais/storage';
+import type { WritableAtom } from 'jotai';
 
 type SortOrder = 'add_asc' | 'add_desc' | 'a-z' | 'z-a';
 
@@ -18,52 +18,69 @@ const defaultConfig: LocalConfig = {
     identifer: 'local',
     folders: [await audioDir()]
 };
-
-export const localStorageConfigJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
 const allowedFormats = ['ogg', 'wav', 'flac', 'mp3', 'aiff', 'aac'];
 
 export class Local implements AbstractStorage<SortOrder> {
-    identifer = 'local';
-    private songList: Song<'local'>[] = [];
+    localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local'));
+    songlistJotai?: WritableAtom<Song<'local'>[], [Song<'local'>[]], void>;
+    scannedJotai?: WritableAtom<boolean, boolean[], void>;
+
     constructor () {
-        this.initConfig();
-        this.initSongList();
+        queueMicrotask(() => {
+            this.initConfig();
+            this.initSongList();
+        });
     }
 
     private initConfig () {
-        const currentConfig = sharedStore.get(localStorageConfigJotai) ?? {};
+        const currentConfig = sharedStore.get(this.localStorageConfigJotai) ?? {};
         const config = Object.assign({}, defaultConfig, currentConfig);
-        sharedStore.set(localStorageConfigJotai, config);
+        sharedStore.set(this.localStorageConfigJotai, config);
+        const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
+        this.songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));
+        this.scannedJotai = focusAtom(localStorageJotai, (optic) => optic.prop('scanned'));
     }
 
     private async initSongList () {
         if (!(await backendStorage.has('cachedLocalSong'))) {
             await this.scan();
-            await backendStorage.set('cachedLocalSong', this.songList);
             return;
         }
 
         const cache: Song<'local'>[] = (await backendStorage.get('cachedLocalSong'))!;
         if (cache.length < 1) {
             await this.scan();
-            await backendStorage.set('cachedLocalSong', this.songList);
-            backendStorage.save();
             return;
         }
+        this.scanned = true;
         this.songList = cache;
     }
 
-    private getConfig () {
-        return (sharedStore.get(localStorageConfigJotai) ?? defaultConfig) as LocalConfig;
+    private set songList (list: Song<'local'>[]) {
+        sharedStore.set(this.songlistJotai!, list);
     }
 
-    private async scan () {
-        sharedStore.set(scanningJotai, true);
-        const {folders} = this.getConfig();
+    private set scanned (scanned: boolean) {
+        sharedStore.set(this.scannedJotai!, scanned);
+    }
+
+    private getConfig () {
+        return (sharedStore.get(this.localStorageConfigJotai) ?? defaultConfig) as LocalConfig;
+    }
+
+    async scan () {
+        this.scanned = false;
+
+        const { folders } = this.getConfig();
+        this.songList = [];
         for (const folder of folders) {
             this.songList.push(...(await this.scanFolder(folder)));
         }
-        sharedStore.set(scanningJotai, false);
+
+        await backendStorage.set('cachedLocalSong', this.songList);
+        backendStorage.save();
+
+        this.scanned = true;
     }
 
     private async scanFolder (path: string) {
@@ -79,7 +96,6 @@ export class Local implements AbstractStorage<SortOrder> {
             const extName = extractExtName(entry.name);
             if (!allowedFormats.includes(extName)) continue;
 
-            console.log(subPath);
             const buffer = await readFile(subPath);
             try {
                 const meta = new MetaFile(buffer);
@@ -121,5 +137,4 @@ export class Local implements AbstractStorage<SortOrder> {
     }
 }
 
-const local = new Local();
-export default local;
+export default Local;

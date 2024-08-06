@@ -23,6 +23,10 @@ a {
   animation-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);
 }
 
+.ms-bezier {
+  animation-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
 @keyframes fadein {
   from {
     translate: 0 40vh;

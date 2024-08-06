@@ -550,7 +550,6 @@ dependencies = [
 name = "cicadas"
 version = "0.0.0"
 dependencies = [
- "base64 0.22.1",
  "rodio",
  "serde",
  "serde_json",

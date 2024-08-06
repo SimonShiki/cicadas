@@ -1,21 +1,28 @@
-import { scanningJotai, Song } from '../jotais/storage';
+import { storagesJotai } from '../jotais/storage';
 import { useAtomValue } from 'jotai';
-import local from '../storages/local';
-import { useEffect, useState } from 'react';
 import SongItem from '../components/song-item';
 import Button from '../components/base/button';
 import Select from '../components/base/select';
 import Input from '../components/base/input';
 import { Virtuoso } from 'react-virtuoso';
+import type { Song as AbstractSong } from '../jotais/storage';
+import { focusAtom } from 'jotai-optics';
+import Spinner from '../components/base/spinner';
+import * as player from '../utils/player';
+import { useCallback } from 'react';
+
+const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
+const songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));
+const scannedJotai = focusAtom(localStorageJotai, (optic) => optic.prop('scanned'));
 
 export default function Local () {
-    const scanning = useAtomValue(scanningJotai);
-    const [list, setList] = useState<Song<'local'>[]>([]);
-    useEffect(() => {
-        local.getSongList('add_asc').then((songs) => {
-            setList(songs);
-        });
-    }, []);
+    const list = useAtomValue(songlistJotai);
+    const scanned = useAtomValue(scannedJotai);
+    const handleClickSong = useCallback((song: AbstractSong<'local'>) => {
+        player.clearPlaylist();
+        player.addToPlaylist(...list);
+        player.setCurrentSong(song);
+    }, [list]);
     return (
         <div className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 pl-2'>
@@ -33,15 +40,21 @@ export default function Local () {
                     }]} value='a-z' />
                 </div>
             </div>
-            <div className='h-[calc(100vh-204px)]'>
-                <Virtuoso
-                    totalCount={list.length}
-                    itemContent={(index) => {
-                        const song = list[index];
-                        return <SongItem song={song} hideBg={!(index % 2)} />;
-                    }}
-                />
-            </div>
+            {scanned ? (
+                <div className='h-[calc(100vh-204px)]'>
+                    <Virtuoso
+                        totalCount={list.length}
+                        itemContent={(index) => {
+                            const song = list[index];
+                            return <SongItem song={song} onClick={handleClickSong} hideBg={!(index % 2)} />;
+                        }}
+                    />
+                </div>
+            ) : (
+                <div className='flex justify-center items-center pt-20vh'>
+                    <Spinner />
+                </div>
+            )}
         </div>
     );
 }
