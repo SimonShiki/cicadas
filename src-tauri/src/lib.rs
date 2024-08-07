@@ -1,12 +1,13 @@
 mod audio;
 mod media_control;
 mod error;
+mod local_scanner;
 
 use audio::AudioState;
 use media_control::MediaControlState;
 use rodio::OutputStream;
-use std::{path::Path, sync::{Arc, Mutex, Once}};
-use tauri::{image::Image, Emitter, Manager};
+use std::sync::{Arc, Mutex, Once};
+use tauri::{Emitter, Manager};
 use std::sync::atomic::AtomicBool;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
@@ -77,7 +78,6 @@ pub async fn run() {
 
             tray.set_title(Some("Cicadas"))?;
             tray.set_tooltip(Some("Cicadas"))?;
-            tray.set_icon(Some(Image::from_path(Path::new("icons/32x32.png"))?))?;
 
             Ok(())
         })
@@ -102,6 +102,8 @@ pub async fn run() {
             media_control::init_media_controls,
             media_control::update_media_metadata,
             media_control::update_playback_status,
+            local_scanner::get_song_buffer,
+            local_scanner::scan_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

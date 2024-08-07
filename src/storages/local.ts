@@ -2,11 +2,10 @@ import { StorageConfig, storagesConfigJotai } from '../jotais/settings';
 import sharedStore from '../jotais/shared-store';
 import { AbstractStorage, Song, storagesJotai } from '../jotais/storage';
 import { focusAtom } from 'jotai-optics';
-import { readDir, readFile, stat } from '@tauri-apps/plugin-fs';
-import { resolve, audioDir } from '@tauri-apps/api/path';
-import { MetaFile } from 'music-metadata-wasm';
-import { extractExtName, createDataUrl, backendStorage } from '../utils/local-utitity';
+import { audioDir } from '@tauri-apps/api/path';
+import { backendStorage } from '../utils/local-utitity';
 import type { WritableAtom } from 'jotai';
+import { invoke } from '@tauri-apps/api/core';
 
 type AudioScanBehavior = 'startup' | 'daily' | 'weekly' | 'never';
 
@@ -20,7 +19,6 @@ const defaultConfig: LocalConfig = {
     folders: [await audioDir()],
     autoScanBehavior: 'never'
 };
-const allowedFormats = ['ogg', 'wav', 'flac', 'mp3', 'aiff', 'aac'];
 
 export class Local implements AbstractStorage {
     localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local'));
@@ -63,13 +61,10 @@ export class Local implements AbstractStorage {
 
         // Auto-scan
         const { autoScanBehavior } = this.getConfig();
-        switch (autoScanBehavior) {
-        case 'startup': {
+        if (autoScanBehavior === 'startup') {
             this.scan();
-            break;
         }
-        // @todo
-        }
+        // TODO: Implement other auto-scan behaviors
     }
 
     private set songList (list: Song<'local'>[]) {
@@ -91,12 +86,11 @@ export class Local implements AbstractStorage {
     async scan () {
         this.scanned = false;
 
-        const buffer: Song<'local'>[] = [];
-
         const { folders } = this.getConfig();
-        for (const folder of folders) {
-            buffer.push(...(await this.scanFolder(folder)));
-        }
+        const scanPromises = folders.map(folder => invoke('scan_folder', { path: folder }));
+        const scannedFolders = await Promise.all(scanPromises);
+
+        const buffer: Song<'local'>[] = scannedFolders.flat();
 
         this.songList = buffer;
         await backendStorage.set('cachedLocalSong', this.songList);
@@ -105,57 +99,12 @@ export class Local implements AbstractStorage {
         this.scanned = true;
     }
 
-    private async scanFolder (path: string) {
-        const entries = await readDir(path);
-        const songs: Song<'local'>[] = [];
-        for (const entry of entries) {
-            const subPath = await resolve(path, entry.name);
-            console.log(subPath);
-            if (entry.isDirectory) {
-                songs.push(...(await this.scanFolder(subPath)));
-                continue;
-            }
-
-            const extName = extractExtName(entry.name);
-            if (!allowedFormats.includes(extName)) continue;
-
-            const buffer = await readFile(subPath);
-            const fileStat = await stat(subPath);
-            try {
-                const meta = new MetaFile(buffer);
-                const coverData = meta.pictures[0];
-                songs.push({
-                    id: subPath,
-                    name: meta.title,
-                    artist: meta.artist,
-                    album: meta.album,
-                    cover: createDataUrl(coverData.data, coverData.mimeType ?? 'image/png'),
-                    duration: meta.duration,
-                    storage: 'local',
-                    mtime: fileStat.mtime?.getTime() ?? 0,
-                    path: subPath
-                });
-                meta.dispose();
-            } catch (e) {
-                console.error(e);
-                this.songList.push({
-                    id: subPath,
-                    name: entry.name,
-                    storage: 'local',
-                    mtime: fileStat.mtime?.getTime() ?? 0,
-                    path: subPath
-                });
-            }
-        }
-        return songs;
-    }
-
     async getSongBuffer (id: string) {
         const song = this.songList.find(song => song.id === id);
         if (!song) throw new Error(`song with id ${id} not exist`);
         const path = song.path;
 
-        return await readFile(path);
+        return await invoke('get_song_buffer', { path });
     }
 
     async getSongList () {
