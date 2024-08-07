@@ -6,6 +6,7 @@ import { audioDir } from '@tauri-apps/api/path';
 import { backendStorage } from '../utils/local-utitity';
 import type { WritableAtom } from 'jotai';
 import { invoke } from '@tauri-apps/api/core';
+import { mergeDeep } from '../utils/merge-deep';
 
 type AudioScanBehavior = 'startup' | 'daily' | 'weekly' | 'never';
 
@@ -38,7 +39,8 @@ export class Local implements AbstractStorage {
 
     private initConfig () {
         const currentConfig = sharedStore.get(this.localStorageConfigJotai) ?? {};
-        const config = Object.assign({}, defaultConfig, currentConfig);
+        const config = mergeDeep(defaultConfig, currentConfig) as LocalConfig;
+        console.log(defaultConfig, currentConfig, config);
         sharedStore.set(this.localStorageConfigJotai, config);
         const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
         this.songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));
@@ -87,8 +89,8 @@ export class Local implements AbstractStorage {
         this.scanned = false;
 
         const { folders } = this.getConfig();
-        const scanPromises = folders.map(folder => invoke('scan_folder', { path: folder }));
-        const scannedFolders = await Promise.all(scanPromises);
+        const scanPromises = folders.map(folder => invoke<Song <'local'>[]>('scan_folder', { path: folder }));
+        const scannedFolders = await Promise.all<Song<'local'>[]>(scanPromises);
 
         const buffer: Song<'local'>[] = scannedFolders.flat();
 
@@ -104,7 +106,7 @@ export class Local implements AbstractStorage {
         if (!song) throw new Error(`song with id ${id} not exist`);
         const path = song.path;
 
-        return await invoke('get_song_buffer', { path });
+        return await invoke<ArrayBuffer>('get_song_buffer', { path });
     }
 
     async getSongList () {

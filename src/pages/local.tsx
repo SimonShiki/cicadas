@@ -11,6 +11,7 @@ import Spinner from '../components/base/spinner';
 import * as player from '../utils/player';
 import { useCallback, useEffect, useState } from 'react';
 import { SortOptions, sortSongList } from '../utils/sort';
+import { nowPlayingBarJotai } from '../jotais/play';
 
 const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
 const songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));
@@ -27,6 +28,7 @@ const sortOptions = [
 export default function Local () {
     const _list = useAtomValue(songlistJotai);
     const [list, setList] = useState(_list);
+    const barOpen = useAtomValue(nowPlayingBarJotai);
     const scanned = useAtomValue(scannedJotai);
     const [sortBy, setSortBy] = useState<SortOptions>('a-z');
     const handleClickSong = useCallback((song: AbstractSong<'local'>) => {
@@ -60,8 +62,11 @@ export default function Local () {
                 <div className='h-[calc(100vh-204px)]'>
                     <Virtuoso
                         computeItemKey={(i) => `${sortBy}-${i}`}
-                        totalCount={list.length}
+                        totalCount={barOpen ? list.length + 1 : list.length}
                         itemContent={(index) => {
+                            if (index === list.length) {
+                                return <div className='h-20' />;
+                            }
                             const song = list[index];
                             return <SongItem song={song} onClick={handleClickSong} hideBg={!(index % 2)} />;
                         }}

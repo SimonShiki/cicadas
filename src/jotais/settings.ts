@@ -11,6 +11,8 @@ export interface Setting {
 
 export const settingsJotai = atomWithStorage<Setting>('settings', {
     storages: {}
+}, undefined, {
+    getOnInit: true
 });
 
 export const storagesConfigJotai = focusAtom(settingsJotai, (optic) => optic.prop('storages'));
