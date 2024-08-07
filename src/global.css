@@ -25,6 +25,13 @@ a {
 
 .ms-bezier {
   animation-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);
+  transition-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.animate-menu {
+  animation-name: menu-slide-in;
+  animation-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation-duration: 150ms;
 }
 
 @keyframes fadein {
@@ -36,5 +43,15 @@ a {
   to {
     translate: 0 0;
     opacity: 1;
+  }
+}
+
+@keyframes menu-slide-in {
+from {
+    translate: 0 -10px;
+  }
+
+  to {
+    translate: 0 0;
   }
 }

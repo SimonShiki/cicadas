@@ -44,7 +44,7 @@ export default function Dropdown ({
             {open && (
                 <div
                     ref={contentRef}
-                    className={`absolute z-800 ${position === 'left' ? 'right-0' : 'left-0'} origin-top-right shadow-lg ${contentClassName}`}
+                    className={`absolute animate-menu ms-bezier animate-duration-150 border-(1 solid outline-pri) z-800 ${position === 'left' ? 'right-0' : 'left-0'} origin-top-right shadow-lg ${contentClassName}`}
                 >
                     {content}
                 </div>

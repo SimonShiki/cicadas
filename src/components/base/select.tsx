@@ -1,16 +1,17 @@
 import React, { useState, useRef, forwardRef } from 'react';
 import Dropdown from './dropdown';
 
-interface SelectOption {
-    value: string | number;
+interface SelectOption<T> {
+    value: T;
     label: string;
 }
 
-interface SelectProps {
-    options: SelectOption[];
-    value?: string | number;
-    onChange?: (value: string | number) => void;
+interface SelectProps<T> {
+    options: SelectOption<T>[];
+    value?: T;
+    onChange?: (value: T) => void;
     placeholder?: string;
+    position?: 'left' | 'right';
     disabled?: boolean;
     className?: string;
     size?: 'sm' | 'md' | 'lg';
@@ -22,22 +23,22 @@ const sizeMap = {
     lg: 'text-lg py-1.5 px-2',
 };
 
-// Todo: Generics for more strict type check
-const Select = forwardRef<HTMLDivElement, SelectProps>(function Select ({
+function Select<T> ({
     options,
     value,
     onChange,
     placeholder,
     disabled,
+    position,
     className = '',
     size = 'md',
-}, ref) {
+}: SelectProps<T>, ref: React.Ref<HTMLDivElement>) {
     const [isOpen, setIsOpen] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
 
     const selectedOption = options.find(option => option.value === value);
 
-    const handleSelect = (option: SelectOption) => {
+    const handleSelect = (option: SelectOption<T>) => {
         onChange?.(option.value);
         setIsOpen(false);
     };
@@ -53,12 +54,13 @@ const Select = forwardRef<HTMLDivElement, SelectProps>(function Select ({
             <Dropdown
                 open={isOpen}
                 onClose={() => setIsOpen(false)}
+                position={position}
                 content={
-                    <div className="py-1">
+                    <div className="p-1 text-nowrap">
                         {options.map((option) => (
                             <div
-                                key={option.value}
-                                className={`px-4 py-2 cursor-pointer font-size-sm hover:bg-bg-sec dark:hover:bg-bg-dark-sec ${option.value === value ? 'bg-bg-sec dark:bg-bg-dark-sec' : ''}`}
+                                key={String(option.value)}
+                                className={`px-4 py-2 cursor-pointer rounded-md font-size-sm hover:bg-bg-pri dark:hover:bg-bg-dark-sec ${option.value === value ? 'bg-bg-pri dark:bg-bg-dark-sec' : ''}`}
                                 onClick={() => handleSelect(option)}
                             >
                                 {option.label}
@@ -98,6 +100,8 @@ const Select = forwardRef<HTMLDivElement, SelectProps>(function Select ({
             </Dropdown>
         </div>
     );
-});
+}
 
-export default Select;
+export default forwardRef(Select) as <T>(
+    props: SelectProps<T> & { ref?: React.Ref<HTMLDivElement> }
+) => React.ReactElement;

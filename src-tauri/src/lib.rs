@@ -5,8 +5,8 @@ mod error;
 use audio::AudioState;
 use media_control::MediaControlState;
 use rodio::OutputStream;
-use std::sync::{Arc, Mutex, Once};
-use tauri::{Emitter, Manager};
+use std::{path::Path, sync::{Arc, Mutex, Once}};
+use tauri::{image::Image, Emitter, Manager};
 use std::sync::atomic::AtomicBool;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
@@ -77,6 +77,7 @@ pub async fn run() {
 
             tray.set_title(Some("Cicadas"))?;
             tray.set_tooltip(Some("Cicadas"))?;
+            tray.set_icon(Some(Image::from_path(Path::new("icons/32x32.png"))?))?;
 
             Ok(())
         })

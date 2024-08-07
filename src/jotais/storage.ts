@@ -5,6 +5,7 @@ import { Local } from '../storages/local';
 export interface Song<From extends string> {
     id: string;
     name: string;
+    mtime: number;
     artist?: string;
     cover?: string;
     album?: string;
@@ -13,17 +14,17 @@ export interface Song<From extends string> {
     path: string;
 }
 
-export interface AbstractStorage<SortOrder> {
-    getSongList(order: SortOrder, filter?: string): Promise<Song<StorageMeta<SortOrder>['identifer']>[]>;
+export interface AbstractStorage {
+    getSongList(): Promise<Song<StorageMeta['identifer']>[]>;
     getSongBuffer(id: string): Promise<ArrayBuffer>;
     scan(): Promise<void>;
 }
 
-export interface StorageMeta<SortOrder> {
+export interface StorageMeta {
     identifer: string;
-    instance: AbstractStorage<SortOrder>;
+    instance: AbstractStorage;
     scanned: boolean;
-    songList: Song<StorageMeta<SortOrder>['identifer']>[];
+    songList: Song<StorageMeta['identifer']>[];
 }
 
 interface Storages {
@@ -35,7 +36,7 @@ interface Storages {
             songList: Song<'local'>[];
             
         };
-        [storageName: string]: StorageMeta<string>;
+        [storageName: string]: StorageMeta;
     }
 }
 

@@ -25,7 +25,7 @@ strip = true # Ensures debug symbols are removed
 tauri-build = { version = "2.0.0-rc", features = [] }
 
 [dependencies]
-tauri = { version = "2.0.0-rc", features = ["tray-icon"] }
+tauri = { version = "2.0.0-rc", features = ["tray-icon", "image-png"] }
 tauri-plugin-shell = "2.0.0-rc"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
@@ -34,5 +34,5 @@ serde_json = "1"
 tauri-plugin-fs = "2.0.0-rc.0"
 tauri-plugin-store = "2.0.0-rc.0"
 tauri-plugin-dialog = "2.0.0-rc.0"
-rodio = { version = "0.19", features = ["symphonia-all"] }
+rodio = { git = "https://github.com/SimonShiki/rodio.git", branch = "master", features = ["symphonia-all"] }
 souvlaki = "0.6"

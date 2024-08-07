@@ -2,25 +2,27 @@ import { StorageConfig, storagesConfigJotai } from '../jotais/settings';
 import sharedStore from '../jotais/shared-store';
 import { AbstractStorage, Song, storagesJotai } from '../jotais/storage';
 import { focusAtom } from 'jotai-optics';
-import { readDir, readFile } from '@tauri-apps/plugin-fs';
+import { readDir, readFile, stat } from '@tauri-apps/plugin-fs';
 import { resolve, audioDir } from '@tauri-apps/api/path';
 import { MetaFile } from 'music-metadata-wasm';
 import { extractExtName, createDataUrl, backendStorage } from '../utils/local-utitity';
 import type { WritableAtom } from 'jotai';
 
-type SortOrder = 'add_asc' | 'add_desc' | 'a-z' | 'z-a';
+type AudioScanBehavior = 'startup' | 'daily' | 'weekly' | 'never';
 
-interface LocalConfig extends StorageConfig<'local'> {
+export interface LocalConfig extends StorageConfig<'local'> {
     folders: string[];
+    autoScanBehavior: AudioScanBehavior;
 }
 
 const defaultConfig: LocalConfig = {
     identifer: 'local',
-    folders: [await audioDir()]
+    folders: [await audioDir()],
+    autoScanBehavior: 'never'
 };
 const allowedFormats = ['ogg', 'wav', 'flac', 'mp3', 'aiff', 'aac'];
 
-export class Local implements AbstractStorage<SortOrder> {
+export class Local implements AbstractStorage {
     localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local'));
     songlistJotai?: WritableAtom<Song<'local'>[], [Song<'local'>[]], void>;
     scannedJotai?: WritableAtom<boolean, boolean[], void>;
@@ -30,6 +32,10 @@ export class Local implements AbstractStorage<SortOrder> {
             this.initConfig();
             this.initSongList();
         });
+
+        this.scan = this.scan.bind(this);
+        this.getSongBuffer = this.getSongBuffer.bind(this);
+        this.getSongList = this.getSongList.bind(this);
     }
 
     private initConfig () {
@@ -54,10 +60,24 @@ export class Local implements AbstractStorage<SortOrder> {
         }
         this.scanned = true;
         this.songList = cache;
+
+        // Auto-scan
+        const { autoScanBehavior } = this.getConfig();
+        switch (autoScanBehavior) {
+        case 'startup': {
+            this.scan();
+            break;
+        }
+        // @todo
+        }
     }
 
     private set songList (list: Song<'local'>[]) {
         sharedStore.set(this.songlistJotai!, list);
+    }
+
+    private get songList () {
+        return sharedStore.get(this.songlistJotai!);
     }
 
     private set scanned (scanned: boolean) {
@@ -71,12 +91,14 @@ export class Local implements AbstractStorage<SortOrder> {
     async scan () {
         this.scanned = false;
 
+        const buffer: Song<'local'>[] = [];
+
         const { folders } = this.getConfig();
-        this.songList = [];
         for (const folder of folders) {
-            this.songList.push(...(await this.scanFolder(folder)));
+            buffer.push(...(await this.scanFolder(folder)));
         }
 
+        this.songList = buffer;
         await backendStorage.set('cachedLocalSong', this.songList);
         backendStorage.save();
 
@@ -88,6 +110,7 @@ export class Local implements AbstractStorage<SortOrder> {
         const songs: Song<'local'>[] = [];
         for (const entry of entries) {
             const subPath = await resolve(path, entry.name);
+            console.log(subPath);
             if (entry.isDirectory) {
                 songs.push(...(await this.scanFolder(subPath)));
                 continue;
@@ -97,10 +120,11 @@ export class Local implements AbstractStorage<SortOrder> {
             if (!allowedFormats.includes(extName)) continue;
 
             const buffer = await readFile(subPath);
+            const fileStat = await stat(subPath);
             try {
                 const meta = new MetaFile(buffer);
                 const coverData = meta.pictures[0];
-                this.songList.push({
+                songs.push({
                     id: subPath,
                     name: meta.title,
                     artist: meta.artist,
@@ -108,6 +132,7 @@ export class Local implements AbstractStorage<SortOrder> {
                     cover: createDataUrl(coverData.data, coverData.mimeType ?? 'image/png'),
                     duration: meta.duration,
                     storage: 'local',
+                    mtime: fileStat.mtime?.getTime() ?? 0,
                     path: subPath
                 });
                 meta.dispose();
@@ -117,6 +142,7 @@ export class Local implements AbstractStorage<SortOrder> {
                     id: subPath,
                     name: entry.name,
                     storage: 'local',
+                    mtime: fileStat.mtime?.getTime() ?? 0,
                     path: subPath
                 });
             }
@@ -132,7 +158,7 @@ export class Local implements AbstractStorage<SortOrder> {
         return await readFile(path);
     }
 
-    async getSongList (order: SortOrder, filter?: string) {
+    async getSongList () {
         return this.songList;
     }
 }
