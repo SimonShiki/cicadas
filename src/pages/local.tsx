@@ -24,7 +24,7 @@ export default function Local () {
         player.setCurrentSong(song);
     }, [list]);
     return (
-        <div className='flex flex-col gap-6'>
+        <main className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 pl-2'>
                 <div className='flex flex-row items-center'>
                     <span className='color-text-pri font-size-3xl font-500 grow-1'>Local</span>
@@ -55,6 +55,6 @@ export default function Local () {
                     <Spinner />
                 </div>
             )}
-        </div>
+        </main>
     );
 }

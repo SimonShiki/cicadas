@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai';
-import { currentSongJotai, beginTimeJotai, nowPlayingBarJotai, nowPlayingPageJotai, playingJotai } from '../jotais/play';
+import { currentSongJotai, beginTimeJotai, nowPlayingBarJotai, nowPlayingPageJotai, playingJotai, progressJotai } from '../jotais/play';
 import Card from './base/card';
 import defaultCover from '../assets/default-cover.png';
 import Button from './base/button';
@@ -7,6 +7,7 @@ import * as player from '../utils/player';
 import Progress from './base/progress';
 import { useEffect, useState, useCallback } from 'react';
 import Slider from './base/slider';
+import { invoke } from '@tauri-apps/api/core';
 
 function formatMilliseconds (ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
@@ -21,31 +22,13 @@ export default function NowPlaying () {
     const [playing, setPlaying] = useAtom(playingJotai);
     const barOpen = useAtomValue(nowPlayingBarJotai);
     const song = useAtomValue(currentSongJotai);
-
-    const [elapsedTime, setElapsedTime] = useState(0);
+    const progress = useAtomValue(progressJotai);
+    
     const [isAnimating, setIsAnimating] = useState(false);
 
-    useEffect(() => {
-        let intervalId: ReturnType<typeof setInterval>;
-        if (playing) {
-            setElapsedTime(Date.now() - beginTime!);
-            intervalId = setInterval(() => {
-                setElapsedTime(prevElapsed => prevElapsed + 200);
-            }, 200);
-        }
-        return () => clearInterval(intervalId);
-    }, [playing, beginTime]);
-
     const handlePlayPause = useCallback(() => {
-        if (playing) {
-            player.pause();
-            setBeginTime(Date.now() - elapsedTime);
-        } else {
-            player.play();
-            setBeginTime(Date.now() - elapsedTime);
-        }
-        setPlaying(!playing);
-    }, [playing, elapsedTime, setBeginTime, setPlaying]);
+        setPlaying(playing => !playing);
+    }, [playing, setPlaying]);
 
     const toggleFullscreen = useCallback(() => {
         setIsAnimating(true);
@@ -54,13 +37,18 @@ export default function NowPlaying () {
         setTimeout(() => setIsAnimating(false), 300); // 300ms matches the animation duration
     }, [fullscreen, setFullscreen]);
 
+    const handleChangePlayProgress = useCallback(async (value: number) => {
+        const actualElapsedSecs = value * song!.duration! / 100000;
+        await player.setProgress(actualElapsedSecs);
+    }, [song]);
+
     if (!barOpen || !song) return null;
 
     return (
         <>
-            <div className='absolute bottom-0 left-0 flex w-full'>
-                <Card className='!bg-white mx-auto mb-4 flex flex-col shadow-xl w-70vw lg:w-200 !p-0 overflow-hidden'>
-                    <Progress value={elapsedTime} max={song.duration} height='h-0.5' />
+            <div className='absolute bottom-0 left-0 flex w-full pointer-events-none'>
+                <Card className='!bg-white pointer-events-auto mx-auto mb-4 flex flex-col shadow-xl w-70vw lg:w-200 !p-0 overflow-hidden'>
+                    <Progress value={progress * 1000} max={song.duration} height='h-0.5' />
                     <div className='flex items-center m-4'>
                         <div className='flex flex-row gap-4 mr-auto'>
                             <img draggable={false} src={song.cover ?? defaultCover} alt={song.name} className='rounded-md w-10 h-10 cursor-pointer' onClick={toggleFullscreen} />
@@ -92,9 +80,9 @@ export default function NowPlaying () {
                         <img draggable={false} src={song.cover} className='shadow-md border-outline-pri rounded-md w-80 h-80' />
                         <div className='absolute bottom-0 w-full h-20 mt-auto py-4 bg-black bg-op-20 border-t-(1 solid text-sec) border-op-40'>
                             <div className='flex flex-row gap-6 items-center px-6'>
-                                <span className='color-outline-pri font-size-sm'>{formatMilliseconds(elapsedTime)}</span>
+                                <span className='color-outline-pri font-size-sm'>{formatMilliseconds(progress * 1000)}</span>
                                 <div className='w-full'>
-                                    <Slider value={Math.min(elapsedTime / song.duration! * 100, 100)} step={0.01} />
+                                    <Slider value={Math.min(progress * 1000 / song.duration! * 100, 100)} onChange={handleChangePlayProgress} step={0.01} />
                                 </div>
                                 <span className='color-outline-pri font-size-sm'>{formatMilliseconds(song.duration!)}</span>
                             </div>

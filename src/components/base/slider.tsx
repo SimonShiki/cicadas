@@ -93,7 +93,7 @@ const Slider = forwardRef<HTMLDivElement, SliderProps>(function Slider ({
             </div>
             <div
                 ref={thumbRef}
-                className={`group absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-(1 solid outline-pri) border-b-(solid outline-sec) dark:border-fg-dark-pri flex items-center justify-center shadow-md ${disabled ? '' : 'hover:scale-110'
+                className={`group absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-(1 solid outline-pri) border-b-(solid outline-sec) dark:border-fg-dark-pri flex items-center justify-center ${disabled ? '' : 'hover:scale-110'
                 } transition-transform duration-100`}
                 style={{
                     left: `calc(${getPercentage()}% - 0.5rem)`,

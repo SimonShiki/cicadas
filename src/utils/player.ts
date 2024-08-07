@@ -1,5 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
-import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playmodeJotai } from '../jotais/play';
+import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playmodeJotai, progressJotai } from '../jotais/play';
 import sharedStore from '../jotais/shared-store';
 import { Song } from '../jotais/storage';
 import { invoke } from '@tauri-apps/api/core';
@@ -11,6 +11,11 @@ async function initializeMediaControls () {
         await invoke('init_media_controls');
         const playStatus = await invoke('get_music_status');
         sharedStore.set(playingJotai, playStatus === 'Playing');
+        if (playStatus === 'Playing') {
+            const progress = await invoke<number>('get_playback_progress');
+            sharedStore.set(progressJotai, progress);
+            sharedStore.set(beginTimeJotai, Date.now() - progress * 1000);
+        }
     } catch (e) {
         console.error('Failed to initialize media controls:', e);
     }
@@ -35,6 +40,7 @@ async function playCurrentSong () {
     const currentSong = sharedStore.get(currentSongJotai);
     if (currentSong) {
         sharedStore.set(beginTimeJotai, Date.now());
+        sharedStore.set(progressJotai, 0);
         if (currentSong.storage === 'local') {
             await invoke('play_local_file', { filePath: currentSong.path });
         } else {
@@ -86,10 +92,11 @@ function setupEventListeners () {
     sharedStore.sub(playingJotai, () => {
         const playing = sharedStore.get(playingJotai);
         if (playing) {
-            const intervalId = setInterval(() => {
+            const intervalId = setInterval(async () => {
                 if (!sharedStore.get(playingJotai)) {
                     clearInterval(intervalId);
                 } else {
+                    await updateProgress();
                     checkSongProgress();
                 }
             }, 100);
@@ -97,10 +104,20 @@ function setupEventListeners () {
     });
 }
 
-function checkSongProgress () {
-    const { beginTime, song, playing, playmode } = sharedStore.get(nowPlayingJotai);
+async function updateProgress () {
+    try {
+        const progress = await invoke<number>('get_playback_progress');
+        sharedStore.set(progressJotai, progress);
+    } catch (e) {
+        console.error('Failed to get playback progress:', e);
+    }
+}
 
-    if (playing && song && Date.now() - beginTime! >= (song.duration ?? Infinity)) {
+function checkSongProgress () {
+    const { song, playing, playmode } = sharedStore.get(nowPlayingJotai);
+    const progress = sharedStore.get(progressJotai);
+
+    if (playing && song && progress >= (song.duration ?? Infinity) / 1000) {
         sharedStore.set(backendPlayingJotai, false);
         switch (playmode) {
         case 'single-recycle':
@@ -145,6 +162,7 @@ export function clearPlaylist () {
     sharedStore.set(playlistJotai, []);
     sharedStore.set(currentSongJotai, undefined);
     sharedStore.set(playingJotai, false);
+    sharedStore.set(progressJotai, 0);
 }
 
 export function play () {
@@ -157,6 +175,16 @@ export function pause () {
 
 export function togglePlayPause () {
     sharedStore.set(playingJotai, (current) => !current);
+}
+
+export async function setProgress (progress: number) {
+    try {
+        await invoke('set_playback_progress', { progress });
+        sharedStore.set(progressJotai, progress);
+        sharedStore.set(beginTimeJotai, Date.now() - progress * 1000);
+    } catch (e) {
+        console.error('Failed to set playback progress:', e);
+    }
 }
 
 export function next () {

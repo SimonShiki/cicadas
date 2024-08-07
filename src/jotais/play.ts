@@ -12,6 +12,7 @@ export interface NowPlaying {
     song?: Song<string>;
 }
 
+export const progressJotai = atom(0);
 export const backendPlayingJotai = atom(false);
 export const nowPlayingJotai = atom<NowPlaying>({ volume: 1, playing: false, playmode: 'list-recycle'});
 export const nowPlayingBarJotai = atom((get) => !!get(nowPlayingJotai).song);

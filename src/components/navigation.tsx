@@ -9,7 +9,7 @@ interface NavItemProps {
 function NavItem ({ path, icon, label }: NavItemProps) {
     const location = useLocation();
     return (
-        <Link to={path} className='flex flex-row items-center gap-1 lg:gap-2 color-text-pri font-size-sm p-2 pl-0 bg-white rounded-1.5 bg-opacity-0 hover:bg-opacity-40 transition-all cursor-pointer'>
+        <Link to={path} draggable={false} className='flex flex-row items-center gap-1 lg:gap-2 color-text-pri font-size-sm p-2 pl-0 bg-white rounded-1.5 bg-opacity-0 hover:bg-opacity-40 transition-all cursor-pointer'>
             <span className={`bg-fg-pri w-0.75 h-4 -mr-0.5 rounded-full ${location.pathname === path ? '' : 'invisible'}`} />
             <span className={`w-5 h-5 ${icon}`} />
             <span className='hidden lg:block'>{label}</span>

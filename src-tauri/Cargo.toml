@@ -1,7 +1,7 @@
 [package]
 name = "cicadas"
 version = "0.0.0"
-description = "Cicidas"
+description = "Cicadas"
 authors = ["Simon Shiki"]
 edition = "2021"
 
@@ -34,5 +34,5 @@ serde_json = "1"
 tauri-plugin-fs = "2.0.0-rc.0"
 tauri-plugin-store = "2.0.0-rc.0"
 tauri-plugin-dialog = "2.0.0-rc.0"
-rodio = "0.19"
+rodio = { version = "0.19", features = ["symphonia-all"] }
 souvlaki = "0.6"

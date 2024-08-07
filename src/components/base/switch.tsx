@@ -17,9 +17,9 @@ const sizeMap = {
 };
 
 const thumbSizeMap = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5'
+    sm: 'w-2 h-2',
+    md: 'w-3 h-3',
+    lg: 'w-4 h-4'
 };
 
 const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch ({
@@ -47,7 +47,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch ({
 
     return (
         <label className={`inline-flex items-center cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
-            <div className="relative">
+            <div className="relative group">
                 <input
                     type="checkbox"
                     className="sr-only"
@@ -57,10 +57,10 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch ({
                     ref={ref}
                 />
                 <div
-                    className={`${sizeMap[size]} ${isChecked ? color : 'bg-bg-sec dark:bg-bg-dark-sec'} rounded-full shadow-inner transition-colors duration-300 ease-in-out`}
+                    className={`${sizeMap[size]} ${isChecked ? `${color} border-transparent` : 'bg-bg-pri dark:bg-bg-dark-sec'} border-(1 solid outline-sec) rounded-full transition-colors duration-150 ease-in-out`}
                 />
                 <div
-                    className={`${thumbSizeMap[size]} absolute top-0.5 left-1 bg-white rounded-full shadow transform transition-transform duration-300 ease-in-out ${isChecked ? 'translate-x-full' : 'translate-x-0'
+                    className={`${thumbSizeMap[size]} group-hover:scale-110 absolute top-1.2 left-1 bg-text-sec rounded-full shadow transform transition-transform duration-150 ease-in-out ${isChecked ? 'translate-x-5 bg-white' : 'translate-x-0'
                     }`}
                 />
             </div>

@@ -20,6 +20,7 @@
         "fullscreen": false,
         "transparent": true,
         "decorations": false,
+        "additionalBrowserArgs": "--enable-features=OverlayScrollbar,msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation",
         "windowEffects": {
           "effects": [
             "mica"
