@@ -6,7 +6,7 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import * as player from '../utils/player';
 
 interface LyricsProps {
-    lyrics: string | undefined;
+    lyrics: string;
     className?: string;
 }
 
@@ -14,22 +14,22 @@ export default function Lyrics ({lyrics, className = ''}: LyricsProps) {
     const [parsedLyrics, setParsedLyrics] = useState<ParsedLyrics | string>('');
     const progress = useAtomValue(progressJotai) * 1000;
     const [prevHighlight, setPrevHighlight] = useState(0);
-    const [lastScrolled, setLastScrolled] = useState(-3001);
+    const [lastScrolled, setLastScrolled] = useState(-1001);
     const virtuosoRef = useRef <VirtuosoHandle>(null);
 
     useEffect(() => {
         if (!lyrics) return;
         setParsedLyrics(parseLyrics(lyrics));
+        virtuosoRef.current?.scrollTo({ top: 0 });
     }, [lyrics]);
 
     useEffect(() => {
         if (typeof parsedLyrics !== 'object') return;
         for (let i = 0; i < parsedLyrics.lines.length; i++) {
             if (!shouldHighlight(i)) continue;
-            if (prevHighlight !== i && Date.now() - lastScrolled > 3000) {
+            if (prevHighlight !== i && Date.now() - lastScrolled > 1000) {
                 virtuosoRef.current?.scrollToIndex(Math.max(0, i - 1));
                 setPrevHighlight(i);
-                setLastScrolled((lastScrolled) => lastScrolled - 3000);
             }
             break;
         }
@@ -42,7 +42,6 @@ export default function Lyrics ({lyrics, className = ''}: LyricsProps) {
         return progress > line.time && progress < (next?.time ?? Infinity);
     }, [parsedLyrics, progress]);
 
-    if (!lyrics) return null;
     if (typeof parsedLyrics === 'string') {
         return (
             <div className={`color-white ${className}`}>
@@ -53,7 +52,7 @@ export default function Lyrics ({lyrics, className = ''}: LyricsProps) {
 
     return (
         <Virtuoso
-            className={`flex flex-col *:text-pretty overflow-x-hidden scrollbar-none ${className}`}
+            className={`flex flex-col scroll-smooth *:text-pretty overflow-x-hidden scrollbar-none ${className}`}
             totalCount={parsedLyrics.lines.length}
             ref={virtuosoRef}
             onScroll={() => setLastScrolled(Date.now())}

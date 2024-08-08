@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai';
-import { currentSongJotai, nowPlayingBarJotai, nowPlayingPageJotai, playingJotai, playlistJotai, progressJotai, volumeJotai } from '../jotais/play';
+import { currentSongJotai, nowPlayingBarJotai, nowPlayingPageJotai, playingJotai, playlistJotai, PlayMode, playModeJotai, progressJotai, volumeJotai } from '../jotais/play';
 import Card from './base/card';
 import defaultCover from '../assets/default-cover.png';
 import Button from './base/button';
@@ -9,8 +9,17 @@ import { useState, useCallback } from 'react';
 import Slider from './base/slider';
 import Tooltip from './base/tooltip';
 import { Virtuoso } from 'react-virtuoso';
-import { Song } from '../jotais/storage';
 import Lyrics from './lyrics';
+
+const playModeIconMap: Record<PlayMode, string> = {
+    list: 'i-fluent:arrow-repeat-all-off-20-regular',
+    'list-recycle': 'i-fluent:arrow-repeat-all-20-regular',
+    single: 'i-fluent:arrow-right-20-regular',
+    'single-recycle': 'i-fluent:arrow-repeat-1-20-regular',
+    random: 'i-fluent:arrow-shuffle-20-regular'
+};
+
+const playModeCycle = ['list', 'list-recycle', 'single', 'single-recycle', 'random'] as const;
 
 function formatMilliseconds (ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
@@ -22,6 +31,7 @@ function formatMilliseconds (ms: number): string {
 export default function NowPlaying () {
     const [fullscreen, setFullscreen] = useAtom(nowPlayingPageJotai);
     const [playing, setPlaying] = useAtom(playingJotai);
+    const playMode = useAtomValue(playModeJotai);
     const [volume, setVolume] = useAtom(volumeJotai);
     const playlist = useAtomValue(playlistJotai);
     const barOpen = useAtomValue(nowPlayingBarJotai);
@@ -45,10 +55,6 @@ export default function NowPlaying () {
         const actualElapsedSecs = value * song!.duration! / 100000;
         await player.setProgress(actualElapsedSecs);
     }, [song]);
-
-    const handleSwitchSong = useCallback((song: Song<string>) => {
-        player.setCurrentSong(song);
-    }, []);
 
     if (!barOpen || !song) return null;
 
@@ -75,6 +81,9 @@ export default function NowPlaying () {
                             </div>
                         </div>
                         <div className='flex gap-2 items-center w-1/3 justify-end'>
+                            <span className={`w-5 h-5 cursor-pointer ${playModeIconMap[playMode]}`} onClick={() => {
+                                player.setPlayMode(playModeCycle[(playModeCycle.indexOf(playMode) + 1) % playModeCycle.length]);
+                            }} />
                             <Tooltip
                                 content={(
                                     <div className='flex pb-4 h-20 flex-col items-center gap-2'>
@@ -96,7 +105,7 @@ export default function NowPlaying () {
                                             itemContent={(index) => {
                                                 const thatSong = playlist[index];
                                                 return (
-                                                    <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => handleSwitchSong(thatSong)}>
+                                                    <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => player.setCurrentSong(song)}>
                                                         <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
                                                         <div className='flex flex-col *:text-truncate max-w-56'>
                                                             <span className={`color-text-pri font-size-xs font-500 ${song.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
@@ -119,13 +128,13 @@ export default function NowPlaying () {
             </div>
             {(fullscreen || isAnimating) && (
                 <div
-                    className={`absolute top-0 left-0 w-full h-full ms-bezier bg-cover animate-duration-300 ${fullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
+                    className={`translate-z-0 absolute top-0 left-0 w-full h-full ms-bezier bg-cover animate-duration-300 ${fullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
                     style={{ backgroundImage: `url("${song.cover}")` }}
                 >
-                    <div className='w-full h-full backdrop-filter backdrop-blur-256 bg-black bg-op-40 flex flex-col items-center justify-center'>
+                    <div className='w-full h-full translate-z-0 backdrop-filter backdrop-blur-256 bg-black bg-op-40 flex flex-col items-center justify-center'>
                         <div className='flex gap-12'>
                             <img draggable={false} src={song.cover} className='shadow-md border-outline-pri rounded-md w-30vw lg:w-80 aspect-square' />
-                            <Lyrics lyrics={song.lyrics} className='h-60 w-50vw max-w-50vw lg:w-120 lg:max-w-120 overflow-x-hidden' />
+                            {song.lyrics && <Lyrics lyrics={song.lyrics} className='h-60 w-50vw max-w-50vw lg:w-120 lg:max-w-120 overflow-x-hidden' />}
                         </div>
                         <div className='absolute bottom-0 w-full h-20 mt-auto py-4 bg-black bg-op-20 border-t-(1 solid text-sec) border-op-40'>
                             <div className='flex flex-row gap-6 items-center px-6'>
@@ -146,6 +155,9 @@ export default function NowPlaying () {
                                     <span className='i-fluent:next-24-filled w-6 h-6 cursor-pointer' onClick={player.next} />
                                 </div>
                                 <div className='absolute flex gap-2 pt-3 right-6 items-center color-white'>
+                                    <span className={`w-5 h-5 cursor-pointer ${playModeIconMap[playMode]}`} onClick={() => {
+                                        player.setPlayMode(playModeCycle[(playModeCycle.indexOf(playMode) + 1) % playModeCycle.length]);
+                                    }} />
                                     <Tooltip
                                         content={(
                                             <div className='flex pb-4 h-20 flex-col items-center gap-2'>
@@ -167,7 +179,7 @@ export default function NowPlaying () {
                                                     itemContent={(index) => {
                                                         const thatSong = playlist[index];
                                                         return (
-                                                            <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => handleSwitchSong(thatSong)}>
+                                                            <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => player.setCurrentSong(song)}>
                                                                 <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
                                                                 <div className='flex flex-col *:text-truncate max-w-56'>
                                                                     <span className={`color-text-pri font-size-xs font-500 ${song.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>

@@ -1,5 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
-import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playmodeJotai, progressJotai, volumeJotai } from '../jotais/play';
+import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai } from '../jotais/play';
 import sharedStore from '../jotais/shared-store';
 import { Song } from '../jotais/storage';
 import { invoke } from '@tauri-apps/api/core';
@@ -138,21 +138,22 @@ async function updateProgress () {
     }
 }
 
-function checkSongProgress () {
-    const { song, playing, playmode } = sharedStore.get(nowPlayingJotai);
+async function checkSongProgress () {
+    const { song, playing } = sharedStore.get(nowPlayingJotai);
+    const playmode = sharedStore.get(playModeJotai);
     const progress = sharedStore.get(progressJotai);
 
-    if (playing && song && progress >= (song.duration ?? Infinity) / 1000) {
+    if (playing && song && ((song.duration ?? Infinity) / 1000) - progress <= 0.1) {
         sharedStore.set(backendPlayingJotai, false);
         switch (playmode) {
         case 'single-recycle':
-            playCurrentSong();
+            await playCurrentSong();
             break;
         case 'single':
             sharedStore.set(playingJotai, false);
             break;
         default:
-            next();
+            await next();
             break;
         }
     }
@@ -161,10 +162,7 @@ function checkSongProgress () {
 export function addToPlaylist (...songs: Song<string>[]) {
     sharedStore.set(playlistJotai, (prev) => {
         const newPlaylist = [...prev, ...songs];
-        const playMode = sharedStore.get(playmodeJotai);
-        if (prev.length === 0 && songs.length > 0) {
-            sharedStore.set(currentSongJotai, songs[0]);
-        }
+        const playMode = sharedStore.get(playModeJotai);
         if (playMode === 'random') {
             shuffleNewSongs(newPlaylist, songs.length);
         }
@@ -215,7 +213,7 @@ export async function setProgress (progress: number) {
 export function next () {
     const playlist = sharedStore.get(playlistJotai);
     const currentSong = sharedStore.get(currentSongJotai);
-    const playMode = sharedStore.get(playmodeJotai);
+    const playMode = sharedStore.get(playModeJotai);
     const currentIndex = playlist.findIndex((song) => song.id === currentSong?.id);
 
     const nextIndex = getNextIndex(currentIndex, playlist.length);
@@ -233,7 +231,7 @@ export function next () {
 export function previous () {
     const playlist = sharedStore.get(playlistJotai);
     const currentSong = sharedStore.get(currentSongJotai);
-    const playMode = sharedStore.get(playmodeJotai);
+    const playMode = sharedStore.get(playModeJotai);
     const currentIndex = playlist.findIndex((song) => song.id === currentSong?.id);
 
     const prevIndex = getPreviousIndex(currentIndex, playlist.length);
@@ -255,7 +253,7 @@ function getPreviousIndex (currentIndex: number, playlistLength: number): number
 }
 
 export function setPlayMode (mode: PlayMode) {
-    sharedStore.set(playmodeJotai, mode);
+    sharedStore.set(playModeJotai, mode);
 }
 
 // Initialize the player
