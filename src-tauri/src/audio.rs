@@ -225,6 +225,16 @@ pub async fn set_volume(audio_state: State<'_, AudioState>, volume: f32) -> Resu
 }
 
 #[tauri::command]
+pub async fn get_volume(audio_state: State<'_, AudioState>) -> Result<f32> {
+    let sink = audio_state.sink.lock().unwrap();
+    if let Some(s) = &*sink {
+        Ok(s.volume())
+    } else {
+        Err(AppError::InvalidOperation("No active playback".to_string()))
+    }
+}
+
+#[tauri::command]
 pub async fn set_playback_progress(audio_state: State<'_, AudioState>, progress: f32) -> Result<()> {
     let sink = audio_state.sink.lock().unwrap();
     

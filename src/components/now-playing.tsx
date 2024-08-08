@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai';
-import { currentSongJotai, beginTimeJotai, nowPlayingBarJotai, nowPlayingPageJotai, playingJotai, progressJotai } from '../jotais/play';
+import { currentSongJotai, nowPlayingBarJotai, nowPlayingPageJotai, playingJotai, playlistJotai, progressJotai, volumeJotai } from '../jotais/play';
 import Card from './base/card';
 import defaultCover from '../assets/default-cover.png';
 import Button from './base/button';
@@ -7,6 +7,9 @@ import * as player from '../utils/player';
 import Progress from './base/progress';
 import { useState, useCallback } from 'react';
 import Slider from './base/slider';
+import Tooltip from './base/tooltip';
+import { Virtuoso } from 'react-virtuoso';
+import { Song } from '../jotais/storage';
 
 function formatMilliseconds (ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
@@ -18,6 +21,8 @@ function formatMilliseconds (ms: number): string {
 export default function NowPlaying () {
     const [fullscreen, setFullscreen] = useAtom(nowPlayingPageJotai);
     const [playing, setPlaying] = useAtom(playingJotai);
+    const [volume, setVolume] = useAtom(volumeJotai);
+    const playlist = useAtomValue(playlistJotai);
     const barOpen = useAtomValue(nowPlayingBarJotai);
     const song = useAtomValue(currentSongJotai);
     const progress = useAtomValue(progressJotai);
@@ -40,12 +45,16 @@ export default function NowPlaying () {
         await player.setProgress(actualElapsedSecs);
     }, [song]);
 
+    const handleSwitchSong = useCallback((song: Song<string>) => {
+        player.setCurrentSong(song);
+    }, []);
+
     if (!barOpen || !song) return null;
 
     return (
         <>
             <div className='absolute bottom-0 left-0 flex w-full pointer-events-none'>
-                <Card className='!bg-white pointer-events-auto mx-auto mb-4 flex flex-col shadow-xl w-80vw lg:w-200 !p-0 overflow-hidden'>
+                <Card className='!bg-white pointer-events-auto mx-auto mb-4 flex flex-col shadow-xl w-80vw lg:w-200 !p-0'>
                     <Progress value={progress * 1000} max={song.duration} height='h-0.5' />
                     <div className='flex items-center m-4 justify-between'>
                         <div className='flex flex-row gap-4 w-1/3'>
@@ -65,15 +74,51 @@ export default function NowPlaying () {
                             </div>
                         </div>
                         <div className='flex gap-2 items-center w-1/3 justify-end'>
-                            <span className='i-fluent:speaker-2-20-regular w-4 h-4' />
-                            <span className='i-fluent:navigation-play-20-regular w-4 h-4' />
+                            <Tooltip
+                                content={(
+                                    <div className='flex pb-4 h-20 flex-col items-center gap-2'>
+                                        <span className='font-size-sm'>{Math.floor(volume * 100)}</span>
+                                        <Slider vertical value={volume * 100} onChange={value => setVolume(value / 100)} />
+                                    </div>
+                                )}
+                                className='flex w-5 h-5'
+                                trigger='click'
+                            >
+                                <span className='i-fluent:speaker-2-20-regular w-5 h-5' />
+                            </Tooltip>
+                            <Tooltip
+                                content={(
+                                    <div className='flex flex-col h-64 w-72 gap-4 p-2'>
+                                        <span className='font-(500 size-lg)'>Playlist ({playlist.length})</span>
+                                        <Virtuoso
+                                            totalCount={playlist.length}
+                                            itemContent={(index) => {
+                                                const thatSong = playlist[index];
+                                                return (
+                                                    <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => handleSwitchSong(thatSong)}>
+                                                        <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
+                                                        <div className='flex flex-col *:text-truncate max-w-56'>
+                                                            <span className={`color-text-pri font-size-xs font-500 ${song.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
+                                                            <span className={`color-text-sec font-size-xs ${song.id === thatSong.id ? '!color-fg-pri' : ''}`}>{thatSong.album}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                className='flex w-5 h-5'
+                                trigger='click'
+                            >
+                                <span className='i-fluent:navigation-play-20-regular w-5 h-5' />
+                            </Tooltip>
                         </div>
                     </div>
                 </Card>
             </div>
             {(fullscreen || isAnimating) && (
                 <div
-                    className={`absolute top-0 left-0 w-full h-full ms-bezier animate-duration-300 ${fullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
+                    className={`absolute top-0 left-0 w-full h-full ms-bezier bg-cover animate-duration-300 ${fullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
                     style={{ backgroundImage: `url("${song.cover}")` }}
                 >
                     <div className='w-full h-full backdrop-filter backdrop-blur-256 bg-black bg-op-40 flex flex-col items-center justify-center'>
@@ -97,8 +142,45 @@ export default function NowPlaying () {
                                     <span className='i-fluent:next-24-filled w-6 h-6 cursor-pointer' onClick={player.next} />
                                 </div>
                                 <div className='absolute flex gap-2 pt-3 right-6 items-center color-white'>
-                                    <span className='i-fluent:speaker-2-20-filled w-5 h-5' />
-                                    <span className='i-fluent:navigation-play-20-filled w-5 h-5' />
+                                    <Tooltip
+                                        content={(
+                                            <div className='flex pb-4 h-20 flex-col items-center gap-2'>
+                                                <span className='font-size-sm'>{Math.floor(volume * 100)}</span>
+                                                <Slider vertical value={volume * 100} onChange={value => setVolume(value / 100)} />
+                                            </div>
+                                        )}
+                                        className='flex w-5 h-5'
+                                        trigger='click'
+                                    >
+                                        <span className='i-fluent:speaker-2-20-filled w-5 h-5' />
+                                    </Tooltip>
+                                    <Tooltip
+                                        content={(
+                                            <div className='flex flex-col h-64 w-72 gap-4 p-2'>
+                                                <span className='font-(500 size-lg)'>Playlist ({playlist.length})</span>
+                                                <Virtuoso
+                                                    totalCount={playlist.length}
+                                                    itemContent={(index) => {
+                                                        const thatSong = playlist[index];
+                                                        return (
+                                                            <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => handleSwitchSong(thatSong)}>
+                                                                <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
+                                                                <div className='flex flex-col *:text-truncate max-w-56'>
+                                                                    <span className={`color-text-pri font-size-xs font-500 ${song.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
+                                                                    <span className={`color-text-sec font-size-xs ${song.id === thatSong.id ? '!color-fg-pri' : ''}`}>{thatSong.album}</span>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
+                                        className='flex w-5 h-5'
+                                        trigger='click'
+                                        placement='top-right'
+                                    >
+                                        <span className='i-fluent:navigation-play-20-filled w-5 h-5' />
+                                    </Tooltip>
                                 </div>
                             </div>
                         </div>

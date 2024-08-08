@@ -96,6 +96,7 @@ pub async fn run() {
             audio::pause,
             audio::resume,
             audio::set_volume,
+            audio::get_volume,
             audio::set_speed,
             audio::set_playback_progress,
             audio::get_playback_progress,

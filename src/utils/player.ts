@@ -1,5 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
-import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playmodeJotai, progressJotai } from '../jotais/play';
+import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playmodeJotai, progressJotai, volumeJotai } from '../jotais/play';
 import sharedStore from '../jotais/shared-store';
 import { Song } from '../jotais/storage';
 import { invoke } from '@tauri-apps/api/core';
@@ -14,8 +14,11 @@ async function initializeMediaControls () {
         if (playStatus === 'Playing') {
             const progress = await invoke<number>('get_playback_progress');
             sharedStore.set(progressJotai, progress);
+            sharedStore.set(backendPlayingJotai, true);
             sharedStore.set(beginTimeJotai, Date.now() - progress * 1000);
         }
+        const volume = await invoke<number>('get_volume');
+        sharedStore.set(volumeJotai, factorToVolume(volume));
     } catch (e) {
         console.error('Failed to initialize media controls:', e);
     }
@@ -38,6 +41,7 @@ async function updatePlaybackStatus (isPlaying: boolean) {
 
 async function playCurrentSong () {
     const currentSong = sharedStore.get(currentSongJotai);
+    const volume = sharedStore.get(volumeJotai);
     if (currentSong) {
         sharedStore.set(beginTimeJotai, Date.now());
         sharedStore.set(progressJotai, 0);
@@ -46,6 +50,7 @@ async function playCurrentSong () {
         } else {
             // @todo web streaming
         }
+        await invoke('set_volume', { volume: volumeToFactor(volume) });
         sharedStore.set(backendPlayingJotai, true);
         sharedStore.set(playingJotai, true);
         await updatePlaybackStatus(true);
@@ -102,6 +107,26 @@ function setupEventListeners () {
             }, 100);
         }
     });
+
+    sharedStore.sub(volumeJotai, async () => {
+        const volume = sharedStore.get(volumeJotai);
+        await invoke('set_volume', { volume: volumeToFactor(volume) });
+    });
+}
+
+/**
+ * Since the human body does not perceive audio in a linear fashion,
+ * we use a function here to map the original volume.
+ * @param volume The linear volue
+ * @returns the actucal amplify factor
+ */
+function volumeToFactor (volume: number) {
+    return Math.pow(volume, 2);
+}
+
+function factorToVolume (amplitude: number) {
+    return Math.sqrt(amplitude);
+    
 }
 
 async function updateProgress () {

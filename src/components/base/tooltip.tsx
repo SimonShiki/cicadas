@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 interface TooltipProps {
     content: React.ReactNode;
-    placement?: 'top' | 'bottom' | 'left' | 'right';
+    placement?: 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'top-center' | 'bottom-left' | 'bottom-right' | 'bottom-center';
     trigger?: 'hover' | 'click';
     children: React.ReactNode;
     className?: string;
@@ -44,11 +44,29 @@ export default function Tooltip ({ content, placement = 'top', trigger = 'hover'
 
         switch (placement) {
         case 'top':
+        case 'top-center':
             positionClasses = 'bottom-full left-1/2 -translate-x-1/2 mb-3';
             animationClasses = isVisible ? 'translate-y-0' : 'translate-y-2';
             break;
+        case 'top-left':
+            positionClasses = 'bottom-full left-0 mb-3';
+            animationClasses = isVisible ? 'translate-y-0' : 'translate-y-2';
+            break;
+        case 'top-right':
+            positionClasses = 'bottom-full right-0 mb-3';
+            animationClasses = isVisible ? 'translate-y-0' : 'translate-y-2';
+            break;
         case 'bottom':
+        case 'bottom-center':
             positionClasses = 'top-full left-1/2 -translate-x-1/2 mt-3';
+            animationClasses = isVisible ? 'translate-y-0' : '-translate-y-2';
+            break;
+        case 'bottom-left':
+            positionClasses = 'top-full left-0 mt-3';
+            animationClasses = isVisible ? 'translate-y-0' : '-translate-y-2';
+            break;
+        case 'bottom-right':
+            positionClasses = 'top-full right-0 mt-3';
             animationClasses = isVisible ? 'translate-y-0' : '-translate-y-2';
             break;
         case 'left':
@@ -61,7 +79,7 @@ export default function Tooltip ({ content, placement = 'top', trigger = 'hover'
             break;
         }
 
-        return `${baseClasses} ${positionClasses} ${visibilityClasses} ${animationClasses} ${className}`;
+        return `${baseClasses} ${positionClasses} ${visibilityClasses} ${animationClasses}`;
     };
 
     const getIndicatorClasses = () => {
@@ -70,10 +88,24 @@ export default function Tooltip ({ content, placement = 'top', trigger = 'hover'
 
         switch (placement) {
         case 'top':
+        case 'top-center':
             positionClasses = 'bottom-[-6px] left-1/2 -translate-x-1/2 border-t-white dark:border-t-black border-l-[6px] border-r-[6px] border-t-[6px]';
             break;
+        case 'top-left':
+            positionClasses = 'bottom-[-6px] left-[10px] border-t-white dark:border-t-black border-l-[6px] border-r-[6px] border-t-[6px]';
+            break;
+        case 'top-right':
+            positionClasses = 'bottom-[-6px] right-[10px] border-t-white dark:border-t-black border-l-[6px] border-r-[6px] border-t-[6px]';
+            break;
         case 'bottom':
+        case 'bottom-center':
             positionClasses = 'top-[-6px] left-1/2 -translate-x-1/2 border-b-white dark:border-b-black border-l-[6px] border-r-[6px] border-b-[6px]';
+            break;
+        case 'bottom-left':
+            positionClasses = 'top-[-6px] left-[10px] border-b-white dark:border-b-black border-l-[6px] border-r-[6px] border-b-[6px]';
+            break;
+        case 'bottom-right':
+            positionClasses = 'top-[-6px] right-[10px] border-b-white dark:border-b-black border-l-[6px] border-r-[6px] border-b-[6px]';
             break;
         case 'left':
             positionClasses = 'right-[-6px] top-1/2 -translate-y-1/2 border-l-white dark:border-l-black border-t-[6px] border-b-[6px] border-l-[6px]';
@@ -92,6 +124,7 @@ export default function Tooltip ({ content, placement = 'top', trigger = 'hover'
                 onMouseEnter={() => trigger === 'hover' && setIsVisible(true)}
                 onMouseLeave={() => trigger === 'hover' && setIsVisible(false)}
                 onClick={handleTrigger}
+                className={className}
             >
                 {children}
             </div>

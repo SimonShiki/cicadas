@@ -16,6 +16,8 @@
     "core:window:allow-start-dragging",
     "core:event:default",
     "core:event:allow-listen",
+    "core:menu:allow-new",
+    "core:menu:default",
     "fs:default",
     "store:allow-get",
     "store:allow-set",

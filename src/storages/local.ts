@@ -40,7 +40,6 @@ export class Local implements AbstractStorage {
     private initConfig () {
         const currentConfig = sharedStore.get(this.localStorageConfigJotai) ?? {};
         const config = mergeDeep(defaultConfig, currentConfig) as LocalConfig;
-        console.log(defaultConfig, currentConfig, config);
         sharedStore.set(this.localStorageConfigJotai, config);
         const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
         this.songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));

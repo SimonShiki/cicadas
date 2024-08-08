@@ -3,6 +3,7 @@ import { forwardRef, MouseEventHandler, PropsWithChildren } from 'react';
 interface CardProps extends PropsWithChildren {
     className?: string;
     onClick?: MouseEventHandler<HTMLDivElement>;
+    onContextMenu?: MouseEventHandler<HTMLDivElement>;
     onDoubleClick?: MouseEventHandler<HTMLDivElement>;
 }
 
@@ -13,6 +14,7 @@ export default forwardRef<HTMLDivElement, CardProps>(function Card (props, ref) 
             ref={ref}
             onClick={props.onClick}
             onDoubleClick={props.onDoubleClick}
+            onContextMenu={props.onContextMenu}
         >
             {props.children}
         </div>
