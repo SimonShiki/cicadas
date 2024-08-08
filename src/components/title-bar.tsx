@@ -66,7 +66,7 @@ export default function TitleBar () {
             <div onClick={() => {
                 appWindow.close();
             }} className='group h-9 w-12 hover:bg-[#c42b1c] active:hover:bg-[#c53d2e] transition-colors flex justify-center items-center'>
-                <span className={`i-fluent:dismiss-20-regular color-black ${fullscreen ? 'color-white' : ''} transition-color group-hover:!color-[white] ${focus ? 'color-opacity-100' : 'color-opacity-40'}`} />
+                <span className={`i-fluent:dismiss-20-regular color-black ${fullscreen ? '!color-white' : ''} transition-color group-hover:!color-[white] ${focus ? 'color-opacity-100' : 'color-opacity-40'}`} />
             </div>
         </div>
     );

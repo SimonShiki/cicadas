@@ -1,5 +1,5 @@
 use std::path::Path;
-use lofty::{file::{AudioFile, TaggedFileExt}, probe::Probe, tag::Accessor};
+use lofty::{file::{AudioFile, TaggedFileExt}, probe::Probe, tag::{Accessor, ItemKey}};
 use walkdir::WalkDir;
 use serde::{Serialize, Deserialize};
 use base64::{Engine as _, engine::general_purpose};
@@ -12,6 +12,7 @@ pub struct Song {
     artist: Option<String>,
     album: Option<String>,
     cover: Option<String>,
+    lyrics: Option<String>,
     duration: Option<f64>,
     storage: String,
     mtime: u64,
@@ -56,6 +57,10 @@ fn process_file(path: &Path) -> Option<Song> {
     
     let artist = tag.and_then(|t| t.artist().map(|s| s.to_string()));
     let album = tag.and_then(|t| t.album().map(|s| s.to_string()));
+    let lyrics = tag.and_then(|t| {
+        t.get_string(&ItemKey::Lyrics).map(|s| s.to_string())
+    });
+
     
     let cover = tag.and_then(|t| t.pictures().first()).map(|p| {
         let b64 = general_purpose::STANDARD.encode(&p.data());
@@ -76,6 +81,7 @@ fn process_file(path: &Path) -> Option<Song> {
         duration: Some(duration),
         storage: "local".to_string(),
         mtime,
+        lyrics,
         path: path.to_string_lossy().into_owned(),
     })
 }

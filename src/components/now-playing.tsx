@@ -10,6 +10,7 @@ import Slider from './base/slider';
 import Tooltip from './base/tooltip';
 import { Virtuoso } from 'react-virtuoso';
 import { Song } from '../jotais/storage';
+import Lyrics from './lyrics';
 
 function formatMilliseconds (ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
@@ -84,7 +85,7 @@ export default function NowPlaying () {
                                 className='flex w-5 h-5'
                                 trigger='click'
                             >
-                                <span className='i-fluent:speaker-2-20-regular w-5 h-5' />
+                                <span className='i-fluent:speaker-2-20-regular w-5 h-5 cursor-pointer' />
                             </Tooltip>
                             <Tooltip
                                 content={(
@@ -110,7 +111,7 @@ export default function NowPlaying () {
                                 className='flex w-5 h-5'
                                 trigger='click'
                             >
-                                <span className='i-fluent:navigation-play-20-regular w-5 h-5' />
+                                <span className='i-fluent:navigation-play-20-regular w-5 h-5 cursor-pointer' />
                             </Tooltip>
                         </div>
                     </div>
@@ -122,7 +123,10 @@ export default function NowPlaying () {
                     style={{ backgroundImage: `url("${song.cover}")` }}
                 >
                     <div className='w-full h-full backdrop-filter backdrop-blur-256 bg-black bg-op-40 flex flex-col items-center justify-center'>
-                        <img draggable={false} src={song.cover} className='shadow-md border-outline-pri rounded-md w-30vw lg:w-80 aspect-square' />
+                        <div className='flex gap-12'>
+                            <img draggable={false} src={song.cover} className='shadow-md border-outline-pri rounded-md w-30vw lg:w-80 aspect-square' />
+                            <Lyrics lyrics={song.lyrics} className='h-60 w-50vw max-w-50vw lg:w-120 lg:max-w-120 overflow-x-hidden' />
+                        </div>
                         <div className='absolute bottom-0 w-full h-20 mt-auto py-4 bg-black bg-op-20 border-t-(1 solid text-sec) border-op-40'>
                             <div className='flex flex-row gap-6 items-center px-6'>
                                 <span className='color-outline-pri font-size-sm'>{formatMilliseconds(progress * 1000)}</span>
@@ -152,7 +156,7 @@ export default function NowPlaying () {
                                         className='flex w-5 h-5'
                                         trigger='click'
                                     >
-                                        <span className='i-fluent:speaker-2-20-filled w-5 h-5' />
+                                        <span className='i-fluent:speaker-2-20-filled cursor-pointer w-5 h-5' />
                                     </Tooltip>
                                     <Tooltip
                                         content={(
@@ -179,7 +183,7 @@ export default function NowPlaying () {
                                         trigger='click'
                                         placement='top-right'
                                     >
-                                        <span className='i-fluent:navigation-play-20-filled w-5 h-5' />
+                                        <span className='i-fluent:navigation-play-20-filled cursor-pointer w-5 h-5' />
                                     </Tooltip>
                                 </div>
                             </div>

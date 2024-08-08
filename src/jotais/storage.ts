@@ -10,6 +10,7 @@ export interface Song<From extends string> {
     cover?: string;
     album?: string;
     duration?: number;
+    lyrics?: string;
     storage: From;
     path: string;
 }

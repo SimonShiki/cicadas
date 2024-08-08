@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import unocss from 'unocss/vite';
+import topLevelAwait from 'vite-plugin-top-level-await';
 import path from 'node:path';
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-    plugins: [unocss(), react({
+    plugins: [topLevelAwait(), unocss(), react({
         babel: {
             plugins: [
                 ['babel-plugin-react-compiler'],
