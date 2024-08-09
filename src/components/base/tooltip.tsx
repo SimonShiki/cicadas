@@ -6,9 +6,10 @@ interface TooltipProps {
     trigger?: 'hover' | 'click';
     children: React.ReactNode;
     className?: string;
+    tooltipClassName?: string;
 }
 
-export default function Tooltip ({ content, placement = 'top', trigger = 'hover', children, className = '' }: TooltipProps) {
+export default function Tooltip ({ content, placement = 'top', trigger = 'hover', children, className = '', tooltipClassName = '' }: TooltipProps) {
     const [isVisible, setIsVisible] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +80,7 @@ export default function Tooltip ({ content, placement = 'top', trigger = 'hover'
             break;
         }
 
-        return `${baseClasses} ${positionClasses} ${visibilityClasses} ${animationClasses}`;
+        return `${baseClasses} ${positionClasses} ${visibilityClasses} ${animationClasses} ${tooltipClassName}`;
     };
 
     const getIndicatorClasses = () => {

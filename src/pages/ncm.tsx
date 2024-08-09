@@ -6,74 +6,30 @@ import Input from '../components/base/input';
 import { useCallback, useEffect, useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { nowPlayingBarJotai } from '../jotais/play';
-import type { Song as AbstractSong } from '../jotais/storage';
+import { storagesJotai, type Song as AbstractSong } from '../jotais/storage';
 import SongItem from '../components/song-item';
 import * as player from '../utils/player';
 import Spinner from '../components/base/spinner';
+import Button from '../components/base/button';
 
 interface NCMProfile {
     nickname: string;
     avatarUrl: string;
 }
 
-interface NCMSearchResult {
-    id: number;
-    name: string;
-    artists: {
-        id: number;
-        name: string;
-        picUrl: string | null;
-        alias: string[];
-        albumSize: number;
-        picId: number;
-        fansGroup: string | null;
-        img1v1Url: string;
-        img1v1: number;
-        trans: string | null;
-    }[];
-    album: {
-        id: number;
-        name: string;
-        artist: {
-            id: number;
-            name: string;
-            picUrl: string | null;
-            alias: string[];
-            albumSize: number;
-            picId: number;
-            fansGroup: string | null;
-            img1v1Url: string;
-            img1v1: number;
-            trans: string | null;
-        };
-        publishTime: number;
-        size: number;
-        copyrightId: number;
-        status: number;
-        picId: number;
-        alia: string[];
-        mark: number;
-    };
-    duration: number;
-    copyrightId: number;
-    status: number;
-    alias: string[];
-    rtype: number;
-    ftype: number;
-    mvid: number;
-    fee: number;
-    rUrl: string | null;
-    mark: number;
-}
-
 const ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm'));
+const ncmStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('ncm'));
 
 export default function NCM () {
     const ncmConfig = useAtomValue(ncmStorageConfigJotai) as NCMConfig;
     const [profile, setProfile] = useState<NCMProfile | null>(null);
     const [searching, setSearching] = useState(false);
     const [searchText, setSearchText] = useState('');
+    const [hasMore, setHasMore] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [searchPage, setSearchPage] = useState(1);
     const [searchResult, setSearchResult] = useState<AbstractSong<'ncm'>[]>([]);
+    const {instance: ncmInstance} = useAtomValue(ncmStorageJotai);
     const barOpen = useAtomValue(nowPlayingBarJotai);
     useEffect(() => {
         async function getProfile () {
@@ -88,20 +44,12 @@ export default function NCM () {
     useEffect(() => {
         if (!searching) return;
         async function updateSearchResult () {
-            const res = await fetch(`${ncmConfig.api}search?keywords=${searchText}`);
-            const { result } = await res.json();
-            setSearchResult((result.songs as NCMSearchResult[]).map((song) => ({
-                id: song.id,
-                name: song.name,
-                duration: song.duration,
-                mtime: song.album.publishTime ?? 0,
-                album: song.album.name,
-                artist: song.artists[0].name,
-                cover: song.artists[0].img1v1Url,
-                storage: 'ncm'
-            })));
+            const [list, hasMore] = await ncmInstance.search(searchText);
+            setSearchResult(list);
+            setHasMore(hasMore);
             setSearching(false);
         }
+        setSearchPage(1);
         updateSearchResult();
     }, [searching]);
     const handleClickSong = useCallback((song: AbstractSong<'ncm'>) => {
@@ -109,6 +57,14 @@ export default function NCM () {
         player.addToPlaylist(...searchResult);
         player.setCurrentSong(song);
     }, [searchResult]);
+    const loadMore = useCallback(async () => {
+        setLoadingMore(true);
+        setSearchPage(searchPage + 1);
+        const [list, hasMore] = await ncmInstance.search(searchText, 10, searchPage + 1);
+        setSearchResult([...searchResult, ...list]);
+        setHasMore(hasMore);
+        setLoadingMore(false);
+    }, [searchText, searchPage]);
     return (
         <main className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 pl-2'>
@@ -130,10 +86,14 @@ export default function NCM () {
                 {searchResult.length > 0 ? (
                     <div className='h-[calc(100vh-204px)]'>
                         <Virtuoso
-                            totalCount={barOpen ? searchResult.length + 1 : searchResult.length}
+                            totalCount={hasMore ? searchResult.length + 1 : searchResult.length}
                             itemContent={(index) => {
                                 if (index === searchResult.length) {
-                                    return <div className='h-20' />;
+                                    return (
+                                        <div className='w-full justify-center flex'>
+                                            <Button disabled={loadingMore} className={barOpen ? 'mt-4 mb-24' : 'mt-4'} onClick={loadMore}>{loadingMore ? 'Loading...' : 'Load More'}</Button>
+                                        </div>
+                                    );
                                 }
                                 const song = searchResult[index];
                                 return <SongItem song={song} onClick={handleClickSong} hideBg={!(index % 2)} />;

@@ -4,12 +4,13 @@ import Card from '../components/base/card';
 import Input from '../components/base/input';
 import Select from '../components/base/select';
 import Switch from '../components/base/switch';
-import { storagesConfigJotai } from '../jotais/settings';
+import { settingsJotai, storagesConfigJotai } from '../jotais/settings';
 import { SetStateAction, useAtom, useAtomValue, WritableAtom } from 'jotai';
 import type { LocalConfig } from '../storages/local';
 import { useCallback, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { storagesJotai } from '../jotais/storage';
+import Tooltip from '../components/base/tooltip';
 
 const autoScanOptions = [
     {value: 'startup', label: 'Each startup'} as const,
@@ -18,6 +19,7 @@ const autoScanOptions = [
     { value: 'never', label: 'Never' } as const
 ];
 
+const streamingJotai = focusAtom(settingsJotai, (optic) => optic.prop('streaming'));
 const localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local')) as unknown as WritableAtom<LocalConfig, [SetStateAction<LocalConfig>], void>;
 const localFoldersJotai = focusAtom(localStorageConfigJotai, (optic) => optic.prop('folders'));
 const localAutoScanJotai = focusAtom(localStorageConfigJotai, (optic) => optic.prop('autoScanBehavior'));
@@ -30,6 +32,7 @@ export default function Settings () {
     const [localFolderExpanded, setLocalFolderExpanded] = useState(false);
     const {instance: localStorage} = useAtomValue(localStorageJotai);
     const localScanned = useAtomValue(localScannedJotai);
+    const [streaming, setStreaming] = useAtom(streamingJotai);
 
     const handleAddNewFolder = useCallback(async () => {
         const folders = await open({
@@ -51,6 +54,16 @@ export default function Settings () {
         <main className='flex flex-col gap-4'>
             <div className='flex flex-col gap-2 pl-2'>
                 <span className='color-text-pri font-size-3xl font-500 grow-1'>Settings</span>
+                <span className='color-text-pri font-size-sm my-2'>Play</span>
+                <Card className='flex flex-col gap-2 color-text-pri'>
+                    <div className='flex flex-row items-center gap-4'>
+                        <span className='i-fluent:stream-24-regular w-5 h-5' />
+                        <span className='grow-1'>Use streaming (Experimental)</span>
+                        <Tooltip content='Streaming does not currently support adjusting playback progress' placement='left' tooltipClassName='w-60'>
+                            <Switch checked={streaming} onChange={setStreaming} />
+                        </Tooltip>
+                    </div>
+                </Card>
                 <span className='color-text-pri font-size-sm my-2'>Local</span>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>

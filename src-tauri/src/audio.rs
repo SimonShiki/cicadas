@@ -279,6 +279,32 @@ pub async fn play_local_file(audio_state: State<'_, AudioState>, file_path: Stri
 }
 
 #[tauri::command]
+pub async fn play_arraybuffer(audio_state: State<'_, AudioState>, buffer: Vec<u8>) -> Result<()> {
+    let mut sink_guard = audio_state.sink.lock().unwrap();
+    if let Some(sink) = sink_guard.take() {
+        sink.stop();
+    }
+
+    // Use a cursor to wrap the buffer and create a source from it
+    let cursor = Cursor::new(buffer);
+
+    // Decode the audio data from the buffer
+    let source = Decoder::new(cursor).map_err(|e| AppError::DecodeError(e.to_string()))?;
+
+    // Create a new sink for playback
+    let sink = Sink::try_new(&audio_state.stream_handle)
+        .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
+
+    // Append the source to the sink
+    sink.append(source);
+
+    // Replace the old sink with the new one
+    *sink_guard = Some(sink);
+
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn get_music_status(audio_state: State<'_, AudioState>) -> Result<String> {
     let sink: std::sync::MutexGuard<Option<Sink>> = audio_state.sink.lock().unwrap();
     Ok(match &*sink {

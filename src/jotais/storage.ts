@@ -20,6 +20,7 @@ export interface AbstractStorage {
     getSongList(): Promise<Song<StorageMeta['identifer']>[]>;
     scan(): Promise<void>;
     getMusicStream?(id: string | number): AsyncGenerator<ArrayLike<unknown>, void, unknown>;
+    getMusicBuffer?(id: string | number): Promise<ArrayBuffer>;
 }
 
 export interface StorageMeta {

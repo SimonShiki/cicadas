@@ -6,6 +6,56 @@ import { mergeDeep } from '../utils/merge-deep';
 import type { WritableAtom } from 'jotai';
 import { backendStorage } from '../utils/local-utitity';
 
+interface NCMSearchResult {
+    id: number;
+    name: string;
+    artists: {
+        id: number;
+        name: string;
+        picUrl: string | null;
+        alias: string[];
+        albumSize: number;
+        picId: number;
+        fansGroup: string | null;
+        img1v1Url: string;
+        img1v1: number;
+        trans: string | null;
+    }[];
+    album: {
+        id: number;
+        name: string;
+        artist: {
+            id: number;
+            name: string;
+            picUrl: string | null;
+            alias: string[];
+            albumSize: number;
+            picId: number;
+            fansGroup: string | null;
+            img1v1Url: string;
+            img1v1: number;
+            trans: string | null;
+        };
+        publishTime: number;
+        size: number;
+        copyrightId: number;
+        status: number;
+        picId: number;
+        alia: string[];
+        mark: number;
+    };
+    duration: number;
+    copyrightId: number;
+    status: number;
+    alias: string[];
+    rtype: number;
+    ftype: number;
+    mvid: number;
+    fee: number;
+    rUrl: string | null;
+    mark: number;
+}
+
 type NCMQuality = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires' | 'jyeffect' | 'sky' | 'jymaster';
 
 export interface NCMConfig extends StorageConfig<'ncm'> {
@@ -25,9 +75,10 @@ const defaultConfig: NCMConfig = {
 };
 
 export class NCM implements AbstractStorage {
-    ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm'));
-    songlistJotai?: WritableAtom<Song<'ncm'>[], [Song<'ncm'>[]], void>;
-    scannedJotai?: WritableAtom<boolean, boolean[], void>;
+    private ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm'));
+    private songlistJotai?: WritableAtom<Song<'ncm'>[], [Song<'ncm'>[]], void>;
+    private scannedJotai?: WritableAtom<boolean, boolean[], void>;
+    private bufferCache = new Map<number, ArrayBuffer>();
 
     constructor () {
         this.initCookie();
@@ -100,11 +151,16 @@ export class NCM implements AbstractStorage {
         this.scannedJotai = focusAtom(ncmStorageJotai, (optic) => optic.prop('scanned'));
     }
 
-    async * getMusicStream (id: number, quality = this.config.defaultQuality) {
+    private async getMusicURL (id: number, quality = this.config.defaultQuality) {
         const res = await fetch(`${this.config.api}song/url/v1?id=${id}&level=${quality}${this.config.cookie ? `&cookie=${this.config.cookie}` : ''}`);
         const { data } = await res.json();
         const { url } = data[0];
         if (!url) throw new Error(`Cannot get url for ${id}`);
+        return url as string;
+    }
+
+    async * getMusicStream (id: number, quality = this.config.defaultQuality) {
+        const url = await this.getMusicURL(id, quality);
         const musicRes = await fetch(url);
         if (!musicRes.body) {
             throw new Error(`The music response has no body (${musicRes.status})`);
@@ -115,5 +171,36 @@ export class NCM implements AbstractStorage {
             if (done) break;
             yield value;
         }
+    }
+
+    async getMusicBuffer (id: number, quality = this.config.defaultQuality) {
+        const url = await this.getMusicURL(id, quality);
+        const res = await fetch(url);
+        const buffer = await res.arrayBuffer();
+        return buffer;
+    }
+
+    async search (keyword: string, limit = 10, page = 1) {
+        const offset = (page - 1) * limit;
+        const res = await fetch(`${this.config.api}search?keywords=${keyword}&limit=${limit}&offset=${offset}`);
+        const { result } = await res.json();
+        console.log(keyword, limit, page, result);
+        const mappedList = await Promise.all(
+            (result.songs as NCMSearchResult[]).map(async (song) => {
+                const res = await fetch(`${this.config.api}album?id=${song.album.id}`);
+                const { album } = await res.json();
+                return ({
+                    id: song.id,
+                    name: song.name,
+                    duration: song.duration,
+                    mtime: song.album.publishTime ?? 0,
+                    album: song.album.name,
+                    artist: song.artists[0].name,
+                    cover: album?.picUrl,
+                    storage: 'ncm' as const
+                }) as Song<'ncm'>;
+            })
+        );
+        return [mappedList, result.hasMore as boolean] as const;
     }
 }
