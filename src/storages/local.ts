@@ -33,7 +33,6 @@ export class Local implements AbstractStorage {
         });
 
         this.scan = this.scan.bind(this);
-        this.getSongBuffer = this.getSongBuffer.bind(this);
         this.getSongList = this.getSongList.bind(this);
     }
 
@@ -98,14 +97,6 @@ export class Local implements AbstractStorage {
         backendStorage.save();
 
         this.scanned = true;
-    }
-
-    async getSongBuffer (id: string) {
-        const song = this.songList.find(song => song.id === id);
-        if (!song) throw new Error(`song with id ${id} not exist`);
-        const path = song.path;
-
-        return await invoke<ArrayBuffer>('get_song_buffer', { path });
     }
 
     async getSongList () {

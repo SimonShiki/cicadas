@@ -1,9 +1,10 @@
 import { atom } from 'jotai';
 import { focusAtom } from 'jotai-optics';
 import { Local } from '../storages/local';
+import { NCM } from '../storages/ncm';
 
 export interface Song<From extends string> {
-    id: string;
+    id: string | number;
     name: string;
     mtime: number;
     artist?: string;
@@ -12,13 +13,13 @@ export interface Song<From extends string> {
     duration?: number;
     lyrics?: string;
     storage: From;
-    path: string;
+    path?: string;
 }
 
 export interface AbstractStorage {
     getSongList(): Promise<Song<StorageMeta['identifer']>[]>;
-    getSongBuffer(id: string): Promise<ArrayBuffer>;
     scan(): Promise<void>;
+    getMusicStream?(id: string | number): AsyncGenerator<ArrayLike<unknown>, void, unknown>;
 }
 
 export interface StorageMeta {
@@ -37,6 +38,12 @@ interface Storages {
             songList: Song<'local'>[];
             
         };
+        ncm: {
+            identifer: 'ncm';
+            instance: NCM;
+            scanned: boolean;
+            songList: Song<'ncm'>[];
+        };
         [storageName: string]: StorageMeta;
     }
 }
@@ -49,6 +56,12 @@ export const storageJotai = atom<Storages>({
             scanned: false,
             songList: []
 
+        },
+        ncm: {
+            identifer: 'ncm',
+            instance: new NCM(),
+            scanned: false,
+            songList: []
         }
     }
 });

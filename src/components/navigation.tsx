@@ -31,7 +31,7 @@ export default function Navigation () {
             section: 'Storage', items: [
                 { path: '/local', icon: 'i-fluent:folder-20-regular', label: 'Local' },
                 { path: '/webdav', icon: 'i-fluent:folder-globe-20-regular', label: 'WebDAV' },
-                { path: '/netease', icon: 'i-simple-icons:neteasecloudmusic', label: 'Netease' },
+                { path: '/ncm', icon: 'i-simple-icons:neteasecloudmusic', label: 'Netease' },
             ]
         },
     ];

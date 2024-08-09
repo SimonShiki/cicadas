@@ -6,7 +6,7 @@ mod local_scanner;
 use audio::AudioState;
 use media_control::MediaControlState;
 use rodio::OutputStream;
-use std::sync::{Arc, Mutex, Once};
+use std::sync::{Arc, Condvar, Mutex, Once};
 use tauri::{Emitter, Manager};
 use std::sync::atomic::AtomicBool;
 use tauri::{
@@ -23,6 +23,8 @@ pub async fn run() {
         stream_handle,
         buffer: Arc::new(Mutex::new(Vec::new())),
         is_stream_ended: Arc::new(AtomicBool::new(false)),
+        decoder: Arc::new(Mutex::new(None)),
+        data_available: Arc::new((Mutex::new(false), Condvar::new())),
     };
     let media_control_state = MediaControlState {
         media_controls: Arc::new(Mutex::new(None)),

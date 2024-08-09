@@ -1,7 +1,7 @@
 import { listen } from '@tauri-apps/api/event';
-import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai } from '../jotais/play';
+import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai, streamingJotai } from '../jotais/play';
 import sharedStore from '../jotais/shared-store';
-import { Song } from '../jotais/storage';
+import { Song, storagesJotai } from '../jotais/storage';
 import { invoke } from '@tauri-apps/api/core';
 
 type MediaControlPayload = 'play' | 'pause' | 'toggle' | 'next' | 'previous';
@@ -25,14 +25,18 @@ async function initializeMediaControls () {
 }
 
 async function updateMediaMetadata (song: Song<string>) {
-    await invoke('update_media_metadata', {
-        metadata: {
-            title: song.name,
-            artist: song.artist,
-            album: song.album,
-            cover: song.cover
-        }
-    });
+    try {
+        await invoke('update_media_metadata', {
+            metadata: {
+                title: song.name,
+                artist: song.artist,
+                album: song.album,
+                cover: song.cover
+            }
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 async function updatePlaybackStatus (isPlaying: boolean) {
@@ -45,16 +49,52 @@ async function playCurrentSong () {
     if (currentSong) {
         sharedStore.set(beginTimeJotai, Date.now());
         sharedStore.set(progressJotai, 0);
-        if (currentSong.storage === 'local') {
-            await invoke('play_local_file', { filePath: currentSong.path });
-        } else {
-            // @todo web streaming
-        }
-        await invoke('set_volume', { volume: volumeToFactor(volume) });
-        sharedStore.set(backendPlayingJotai, true);
         sharedStore.set(playingJotai, true);
         await updatePlaybackStatus(true);
         await updateMediaMetadata(currentSong);
+        if (currentSong.storage === 'local') {
+            await invoke('play_local_file', { filePath: currentSong.path });
+            await invoke('set_volume', { volume: volumeToFactor(volume) });
+            sharedStore.set(backendPlayingJotai, true);
+        } else {
+            const storages = sharedStore.get(storagesJotai);
+            const targetStorage = storages[currentSong.storage];
+            if (!targetStorage.instance.getMusicStream) {
+                throw new Error(`storage ${currentSong.storage} doesn't implemented music stream`);
+            }
+            // Start streaming
+            sharedStore.set(streamingJotai, true);
+            if (sharedStore.get(streamingJotai)) {
+                await invoke('end_stream');
+            }
+
+            await invoke('start_streaming');
+            console.log('start streaming');
+            sharedStore.set(backendPlayingJotai, true);
+            await invoke('set_volume', { volume: volumeToFactor(volume) });
+            await pause();
+
+            try {
+                const stream = targetStorage.instance.getMusicStream(currentSong.id);
+                let initChunk = false;
+                for await (const chunk of stream) {
+                    const streaming = sharedStore.get(streamingJotai);
+                    if (!streaming) return;
+                    console.log('received chunk');
+                    await invoke('add_stream_chunk', { chunk: Array.from(chunk) });
+                    if (!initChunk) {
+                        initChunk = true;
+                        await play();
+                    }
+                }
+            } catch (e) {
+                console.error('Error occurs when streaming', e);
+            } finally {
+                console.log('stream end');
+                await invoke('end_stream');
+                sharedStore.set(streamingJotai, false);
+            }
+        }
     }
 }
 
