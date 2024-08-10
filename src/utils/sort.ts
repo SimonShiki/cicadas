@@ -22,7 +22,6 @@ export function filterSongList<T extends string> (list: Song<T>[], keyword: stri
     return list.filter(song => (
         song.name.includes(keyword) ||
         song.artist?.includes(keyword) || 
-        song.path?.includes(keyword)
+        song.album?.includes(keyword)
     ));
 }
-

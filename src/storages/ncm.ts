@@ -242,7 +242,6 @@ export class NCM implements AbstractStorage {
     private ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm')) as unknown as WritableAtom<NCMConfig, [SetStateAction<NCMConfig>], void>;
     private songlistJotai?: WritableAtom<Song<'ncm'>[], [Song<'ncm'>[]], void>;
     private scannedJotai?: WritableAtom<boolean, boolean[], void>;
-    private cachedBuffer?: [number, ArrayBuffer];
 
     constructor () {
         this.initCookie();
@@ -269,14 +268,14 @@ export class NCM implements AbstractStorage {
     }
 
     private async initSongList () {
-        if (!(await backendStorage.has('cachedNCMSong'))) {
+        const cachedNCMSong = await backendStorage.get('cachedNCMSong');
+        if (!cachedNCMSong) {
             await backendStorage.set('cachedNCMSong', []);
             return;
         }
 
-        const cache: Song<'ncm'>[] = (await backendStorage.get('cachedNCMSong'))!;
         this.scanned = true;
-        this.songList = cache;
+        this.songList = cachedNCMSong;
     }
 
     async scan () {
@@ -351,12 +350,8 @@ export class NCM implements AbstractStorage {
     }
 
     async getMusicBuffer (id: number, quality = this.config.defaultQuality) {
-        if (this.cachedBuffer && this.cachedBuffer[0] === id) {
-            return this.cachedBuffer[1];
-        }
         const url = await this.getMusicURL(id, quality);
         const buffer = await fetchArraybuffer(url);
-        this.cachedBuffer = [id, buffer];
         return buffer;
     }
 

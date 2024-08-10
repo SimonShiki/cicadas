@@ -246,7 +246,7 @@ export function addToPlaylist (...songs: Song<string>[]) {
     });
 }
 
-function shuffleNewSongs (playlist: Song<string>[], newSongsCount: number) {
+export function shuffleNewSongs (playlist: Song<string>[], newSongsCount: number) {
     for (let i = playlist.length - newSongsCount; i < playlist.length; i++) {
         const j = i + Math.floor(Math.random() * (playlist.length - i));
         [playlist[i], playlist[j]] = [playlist[j], playlist[i]];

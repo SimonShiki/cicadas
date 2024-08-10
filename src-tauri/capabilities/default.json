@@ -19,10 +19,6 @@
     "core:menu:allow-new",
     "core:menu:default",
     "fs:default",
-    "store:allow-get",
-    "store:allow-set",
-    "store:allow-save",
-    "store:allow-load",
     "fs:read-all",
     {
       "identifier": "fs:scope",
@@ -33,7 +29,6 @@
     "fs:write-all",
     "core:path:default",
     "core:path:allow-resolve",
-    "dialog:default",
-    "store:default"
+    "dialog:default"
   ]
 }

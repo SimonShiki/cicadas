@@ -46,18 +46,17 @@ export class Local implements AbstractStorage {
     }
 
     private async initSongList () {
-        if (!(await backendStorage.has('cachedLocalSong'))) {
+        const cachedLocalSong = await backendStorage.get('cachedLocalSong');
+        if (!cachedLocalSong) {
             await this.scan();
             return;
         }
-
-        const cache: Song<'local'>[] = (await backendStorage.get('cachedLocalSong'))!;
-        if (cache.length < 1) {
+        if (cachedLocalSong.length < 1) {
             await this.scan();
             return;
         }
         this.scanned = true;
-        this.songList = cache;
+        this.songList = cachedLocalSong;
 
         // Auto-scan
         const { autoScanBehavior } = this.getConfig();
@@ -94,7 +93,6 @@ export class Local implements AbstractStorage {
 
         this.songList = buffer;
         await backendStorage.set('cachedLocalSong', this.songList);
-        backendStorage.save();
 
         this.scanned = true;
     }

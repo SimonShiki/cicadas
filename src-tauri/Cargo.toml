@@ -32,7 +32,6 @@ tokio = { version = "1", features = ["full"] }
 thiserror = "1.0"
 serde_json = "1"
 tauri-plugin-fs = "2.0.0-rc.0"
-tauri-plugin-store = "2.0.0-rc.0"
 tauri-plugin-dialog = "2.0.0-rc.0"
 rodio = { git = "https://github.com/SimonShiki/rodio.git", branch = "master", features = ["symphonia-all"] }
 souvlaki = "0.6"
