@@ -17,7 +17,6 @@ export interface Song<From extends string> {
 }
 
 export interface AbstractStorage {
-    getSongList(): Promise<Song<StorageMeta['identifer']>[]>;
     scan(): Promise<void>;
     getMusicStream?(id: string | number): AsyncGenerator<ArrayLike<unknown>, void, unknown>;
     getMusicBuffer?(id: string | number): Promise<ArrayBuffer>;
@@ -69,5 +68,8 @@ export const storageJotai = atom<Storages>({
 
 export const storagesJotai = focusAtom(storageJotai, (optic) => optic.prop('storages'));
 export const scannedJotai = atom(
-    (get) => Object.values(get(storagesJotai)).every(storage => !storage)
+    (get) => {
+        const storages = get(storagesJotai);
+        return (Object.values(storages) as StorageMeta[]).every(storage => storage.scanned);
+    }
 );

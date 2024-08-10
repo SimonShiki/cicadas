@@ -5,7 +5,7 @@ import Button from '../components/base/button';
 import Select from '../components/base/select';
 import Input from '../components/base/input';
 import { Virtuoso } from 'react-virtuoso';
-import type { Song as AbstractSong, Song } from '../jotais/storage';
+import type { Song } from '../jotais/storage';
 import { focusAtom } from 'jotai-optics';
 import Spinner from '../components/base/spinner';
 import * as player from '../utils/player';
@@ -32,7 +32,7 @@ export default function Local () {
     const scanned = useAtomValue(scannedJotai);
     const [keyword, setKeyword] = useState('');
     const [sortBy, setSortBy] = useState<SortOptions>('a-z');
-    const handleClickSong = useCallback((song: AbstractSong<'local'>) => {
+    const handleClickSong = useCallback((song: Song<'local'>) => {
         player.clearPlaylist();
         player.addToPlaylist(...list);
         player.setCurrentSong(song);
@@ -57,9 +57,7 @@ export default function Local () {
             <div className='flex flex-col gap-4 pl-2'>
                 <span className='color-text-pri font-size-3xl font-500'>Local</span>
                 <div className='flex flex-row items-center gap-4'>
-                    <Button onClick={() => {
-                        handleRandomPlay();
-                    }} variant='primary' className='flex flex-row gap-2 items-center'><span className='i-fluent:arrow-shuffle-20-regular w-5 h-5' />Random</Button>
+                    <Button onClick={handleRandomPlay} variant='primary' className='flex flex-row gap-2 items-center'><span className='i-fluent:arrow-shuffle-20-regular w-5 h-5' />Random</Button>
                     {!scanned && (
                         <div className='flex items-center gap-2'>
                             <Spinner size='size-4' />

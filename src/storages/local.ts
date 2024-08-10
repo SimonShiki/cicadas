@@ -33,7 +33,6 @@ export class Local implements AbstractStorage {
         });
 
         this.scan = this.scan.bind(this);
-        this.getSongList = this.getSongList.bind(this);
     }
 
     private initConfig () {
@@ -55,8 +54,8 @@ export class Local implements AbstractStorage {
             await this.scan();
             return;
         }
-        this.scanned = true;
         this.songList = cachedLocalSong;
+        this.scanned = true;
 
         // Auto-scan
         const { autoScanBehavior } = this.getConfig();
@@ -95,10 +94,6 @@ export class Local implements AbstractStorage {
         await backendStorage.set('cachedLocalSong', this.songList);
 
         this.scanned = true;
-    }
-
-    async getSongList () {
-        return this.songList;
     }
 }
 

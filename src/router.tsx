@@ -5,6 +5,8 @@ import Local from './pages/local';
 import NotFound from './pages/404';
 import Settings from './pages/settings';
 import NCM from './pages/ncm';
+import Album from './pages/album';
+import Artist from './pages/artist';
 
 const router = createBrowserRouter([
     {
@@ -13,6 +15,8 @@ const router = createBrowserRouter([
         errorElement: <NotFound />,
         children: [
             { index: true, element: <Song /> },
+            { path: 'album', element: <Album /> },
+            { path: 'artist', element: <Artist /> },
             { path: 'local', element: <Local /> },
             { path: 'ncm', element: <NCM /> },
             { path: 'settings', element: <Settings />}

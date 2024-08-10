@@ -49,7 +49,7 @@ export default function SongItem (props: SongItemProps) {
     return (
         <Card onContextMenu={showContextMenu} onDoubleClick={() => {
             props.onClick(props.song);
-        }} className={`flex flex-row items-center py-2 gap-2 hover:!bg-black cursor-pointer hover:!bg-op-5 transition-colors ${props.hideBg ? '!border-none !bg-transparent' : ''}`}>
+        }} className={`flex flex-row items-center active:scale-99 py-2 gap-2 hover:!bg-black cursor-pointer hover:!bg-op-5 transition-all ${props.hideBg ? '!border-none !bg-transparent' : ''}`}>
             <img draggable={false} src={props.song.cover ?? defaultCover} alt={props.song.name} className='rounded-md w-10 h-10' />
             <div className='flex flex-col gap-1'>
                 <span className='color-text-pri font-size-sm font-500'>{props.song.name}</span>

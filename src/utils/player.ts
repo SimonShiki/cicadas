@@ -110,6 +110,11 @@ async function playCurrentSong () {
 
             sharedStore.set(bufferingJotai, true);
             const buffer = await targetStorage.instance.getMusicBuffer(currentSong.id);
+            const buffering = sharedStore.get(bufferingJotai);
+            if (!buffering) {
+                console.warn('buffer interrupted');
+                return;
+            }
             await invoke('play_arraybuffer', { buffer: await transformChunk(buffer) });
             play();
             await invoke('set_volume', { volume: volumeToFactor(volume) });

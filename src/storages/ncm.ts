@@ -252,7 +252,6 @@ export class NCM implements AbstractStorage {
         });
 
         this.scan = this.scan.bind(this);
-        this.getSongList = this.getSongList.bind(this);
     }
 
     private initListener () {
@@ -274,16 +273,12 @@ export class NCM implements AbstractStorage {
             return;
         }
 
-        this.scanned = true;
         this.songList = cachedNCMSong;
+        this.scanned = true;
     }
 
     async scan () {
         // @todo
-    }
-
-    async getSongList () {
-        return this.songList;
     }
 
     private get config () {
