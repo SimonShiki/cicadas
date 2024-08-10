@@ -12,6 +12,7 @@ import * as player from '../utils/player';
 import Spinner from '../components/base/spinner';
 import Button from '../components/base/button';
 import SonglistItem from '../components/songlist-item';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 interface NCMProfile {
     nickname: string;
@@ -89,10 +90,14 @@ export default function NCM () {
         setSonglistDetail(await ncmInstance.getRemoteSonglistDetail(id));
     }, [songlist, ncmInstance]);
 
+    const intl = useIntl();
+
     return (
         <main className="flex flex-col gap-6">
             <div className="flex flex-col gap-4 pl-2">
-                <span className="color-text-pri font-size-3xl font-500">NCM</span>
+                <span className="color-text-pri font-size-3xl font-500">
+                    <FormattedMessage defaultMessage='NCM' />
+                </span>
                 <div className="flex flex-row items-center gap-4">
                     {ncmConfig.loggedIn ? (
                         <div className="flex items-center font-size-sm gap-1">
@@ -105,10 +110,12 @@ export default function NCM () {
                             ) : <Spinner size="size-4" />}
                         </div>
                     ) : (
-                        <span className="font-size-sm color-text-sec">You&apos;ve not logged in...</span>
+                        <span className="font-size-sm color-text-sec">
+                            <FormattedMessage defaultMessage="You've not logged in..." />
+                        </span>
                     )}
                     <Input
-                        placeholder="Search"
+                        placeholder={intl.formatMessage({ defaultMessage: 'Search'})}
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                         onEnter={() => setIsSearching(true)}
@@ -159,7 +166,9 @@ export default function NCM () {
         return (
             <div className="flex flex-col gap-4 h-full">
                 <div className="flex items-center gap-2">
-                    <span className="font-(500 size-2xl)">Remote Songlist</span>
+                    <span className="font-(500 size-2xl)">
+                        <FormattedMessage defaultMessage='Remote Songlist' />
+                    </span>
                 </div>
                 {songlist.length > 0 ? (
                     <Virtuoso
@@ -175,7 +184,9 @@ export default function NCM () {
                     />
                 ) : (
                     <div className="flex-1 flex justify-center items-center">
-                        {ncmConfig.loggedIn ? <Spinner /> : <span className="color-text-sec">Sign in to get the song list...</span>}
+                        {ncmConfig.loggedIn ? <Spinner /> : <span className="color-text-sec">
+                            <FormattedMessage defaultMessage='Sign in to get the song list...' />
+                        </span>}
                     </div>
                 )}
             </div>
@@ -189,7 +200,9 @@ export default function NCM () {
                     <span className="font-(500 size-2xl)">{songlistName}</span>
                     <Button size="sm" className="flex items-center" onClick={() => setShowSonglist(null)}>
                         <span className="i-fluent:chevron-left-16-regular w-3 h-3" />
-                        <span>Back</span>
+                        <span>
+                            <FormattedMessage defaultMessage='Back' />
+                        </span>
                     </Button>
                 </div>
                 <Virtuoso
@@ -219,7 +232,7 @@ export default function NCM () {
         return (
             <div className="w-full justify-center flex">
                 <Button disabled={loadingMore} className={barOpen ? 'mt-4 mb-24' : 'mt-4'} onClick={loadMore}>
-                    {loadingMore ? 'Loading...' : 'Load More'}
+                    {loadingMore ? intl.formatMessage({ defaultMessage: 'Loading...' }) : intl.formatMessage({ defaultMessage: 'Load More'})}
                 </Button>
             </div>
         );

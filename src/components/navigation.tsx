@@ -1,3 +1,4 @@
+import { useIntl } from 'react-intl';
 import { Link, useLocation } from 'react-router-dom';
 
 interface NavItemProps {
@@ -18,20 +19,21 @@ function NavItem ({ path, icon, label }: NavItemProps) {
 }
 
 export default function Navigation () {
+    const intl = useIntl();
     const navItems = [
         {
-            section: 'Library', items: [
-                { path: '/', icon: 'i-fluent:music-note-1-20-regular', label: 'Songs' },
-                { path: '/album', icon: 'i-fluent:album-20-regular', label: 'Albums' },
-                { path: '/artist', icon: 'i-fluent:people-20-regular', label: 'Artists' },
-                { path: '/songlist', icon: 'i-fluent:list-20-regular', label: 'Songlists' },
+            section: intl.formatMessage({ defaultMessage: 'Library'}), items: [
+                { path: '/', icon: 'i-fluent:music-note-1-20-regular', label: intl.formatMessage({ defaultMessage: 'Songs'}) },
+                { path: '/album', icon: 'i-fluent:album-20-regular', label: intl.formatMessage({ defaultMessage: 'Albums' }) },
+                { path: '/artist', icon: 'i-fluent:people-20-regular', label: intl.formatMessage({ defaultMessage: 'Artists' }) },
+                { path: '/songlist', icon: 'i-fluent:list-20-regular', label: intl.formatMessage({ defaultMessage: 'Songlists' }) },
             ]
         },
         {
-            section: 'Storage', items: [
-                { path: '/local', icon: 'i-fluent:folder-20-regular', label: 'Local' },
-                { path: '/webdav', icon: 'i-fluent:folder-globe-20-regular', label: 'WebDAV' },
-                { path: '/ncm', icon: 'i-simple-icons:neteasecloudmusic', label: 'Netease' },
+            section: intl.formatMessage({ defaultMessage: 'Storage' }), items: [
+                { path: '/local', icon: 'i-fluent:folder-20-regular', label: intl.formatMessage({ defaultMessage: 'Local' }) },
+                { path: '/webdav', icon: 'i-fluent:folder-globe-20-regular', label: intl.formatMessage({ defaultMessage: 'WebDAV' }) },
+                { path: '/ncm', icon: 'i-simple-icons:neteasecloudmusic', label: intl.formatMessage({ defaultMessage: 'NCM' }) },
             ]
         },
     ];
@@ -48,7 +50,7 @@ export default function Navigation () {
                 </div>
             ))}
             <div className='grow-1' />
-            <NavItem path='/settings' icon='i-fluent:settings-20-regular w-5 h-5' label='Settings' />
+            <NavItem path='/settings' icon='i-fluent:settings-20-regular w-5 h-5' label={intl.formatMessage({ defaultMessage: 'Settings'})} />
         </div>
     );
 }

@@ -12,6 +12,7 @@ import { Virtuoso } from 'react-virtuoso';
 import Lyrics from './lyrics';
 import { focusAtom } from 'jotai-optics';
 import { settingsJotai } from '../jotais/settings';
+import { FormattedMessage } from 'react-intl';
 
 const playModeIconMap: Record<PlayMode, string> = {
     list: 'i-fluent:arrow-repeat-all-off-20-regular',
@@ -105,7 +106,9 @@ export default function NowPlaying () {
                             <Tooltip
                                 content={(
                                     <div className='flex flex-col h-64 w-72 gap-4 p-2'>
-                                        <span className='font-(500 size-lg)'>Playlist ({playlist.length})</span>
+                                        <span className='font-(500 size-lg)'>
+                                            <FormattedMessage defaultMessage='Playlist ({total})' values={{ total: playlist.length }} />
+                                        </span>
                                         <Virtuoso
                                             totalCount={playlist.length}
                                             itemContent={(index) => {
@@ -183,7 +186,9 @@ export default function NowPlaying () {
                                     <Tooltip
                                         content={(
                                             <div className='flex flex-col h-64 w-72 gap-4 p-2'>
-                                                <span className='font-(500 size-lg)'>Playlist ({playlist.length})</span>
+                                                <span className='font-(500 size-lg)'>
+                                                    <FormattedMessage defaultMessage='Playlist ({total})' values={{ total: playlist.length }} />
+                                                </span>
                                                 <Virtuoso
                                                     totalCount={playlist.length}
                                                     itemContent={(index) => {

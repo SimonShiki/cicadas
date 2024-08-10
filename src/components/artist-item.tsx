@@ -1,3 +1,4 @@
+import { FormattedMessage } from 'react-intl';
 import { Artist } from '../jotais/library';
 
 interface ArtistItemProps {
@@ -13,7 +14,9 @@ export default function ArtistItem({ artist, onClick }: ArtistItemProps) {
             <img draggable={false} src={artist.cover} alt={artist.name} className='w-36 h-36 aspect-square rounded-full border-(1 solid outline-sec)'/>
             <div className='flex flex-col *:text-ellipsis text-nowrap *:overflow-hidden max-w-30'>
                 <span className='font-500'>{artist.name}</span>
-                <span className='font-size-sm color-text-sec'>{artist.songs.length} Songs</span>
+                <span className='font-size-sm color-text-sec'>
+                    <FormattedMessage defaultMessage='{total} Songs' values={{ total: artist.songs.length }} />
+                </span>
             </div>
         </div>
     );

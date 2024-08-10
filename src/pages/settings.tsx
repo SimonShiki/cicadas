@@ -4,7 +4,7 @@ import Card from '../components/base/card';
 import Input from '../components/base/input';
 import Select from '../components/base/select';
 import Switch from '../components/base/switch';
-import { settingsJotai, storagesConfigJotai } from '../jotais/settings';
+import { localeJotai, settingsJotai, storagesConfigJotai } from '../jotais/settings';
 import { SetStateAction, useAtom, useAtomValue, useSetAtom, WritableAtom } from 'jotai';
 import type { LocalConfig } from '../storages/local';
 import { useCallback, useEffect, useState } from 'react';
@@ -16,6 +16,8 @@ import md5 from 'md5';
 import { NCMConfig } from '../storages/ncm';
 import Spinner from '../components/base/spinner';
 import { nowPlayingBarJotai } from '../jotais/play';
+import { FormattedMessage } from 'react-intl';
+import { langMap } from '../../locales';
 
 const autoScanOptions = [
     {value: 'startup', label: 'Each startup'} as const,
@@ -36,6 +38,7 @@ const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'
 const localScannedJotai = focusAtom(localStorageJotai, (optic) => optic.prop('scanned'));
 
 export default function Settings () {
+    const [locale, setLocale] = useAtom(localeJotai);
     const [localFolders, setLocalFolders] = useAtom(localFoldersJotai);
     const [localAutoScan, setLocalAutoScan] = useAtom(localAutoScanJotai);
     const [phone, setPhone] = useState('');
@@ -126,24 +129,47 @@ export default function Settings () {
     return (
         <main className='flex flex-col gap-4'>
             <div className='flex flex-col gap-2 pl-2'>
-                <span className='color-text-pri font-size-3xl font-500 grow-1'>Settings</span>
-                <span className='color-text-pri font-size-sm my-2'>Play</span>
+                <span className='color-text-pri font-size-3xl font-500 grow-1'>
+                    <FormattedMessage defaultMessage='Settings' />
+                </span>
+                <span className='color-text-pri font-size-sm my-2'>
+                    <FormattedMessage defaultMessage='Language' />
+                </span>
+                <Card className='flex flex-col gap-2 color-text-pri'>
+                    <div className='flex flex-row items-center gap-4'>
+                        <span className='i-fluent:local-language-zi-24-regular w-5 h-5' />
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Language' />
+                        </span>
+                        <Select value={locale} options={langMap} position='left' onChange={(value) => setLocale(value)} />
+                    </div>
+                </Card>
+                <span className='color-text-pri font-size-sm my-2'>
+                    <FormattedMessage defaultMessage='Play' />
+                </span>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:stream-24-regular w-5 h-5' />
-                        <span className='grow-1'>Use streaming (Experimental)</span>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Use streaming (Experimental)' />
+                        </span>
                         <Tooltip content='Streaming does not currently support adjusting playback progress' placement='left' tooltipClassName='w-60'>
                             <Switch checked={streaming} onChange={setStreaming} />
                         </Tooltip>
                     </div>
                 </Card>
-                <span className='color-text-pri font-size-sm my-2'>Local</span>
+                <span className='color-text-pri font-size-sm my-2'>
+                    <FormattedMessage defaultMessage='Local' />
+                </span>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:folder-24-regular w-5 h-5' />
-                        <span className='grow-1'>Folders to scan</span>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Folders to scan' />
+                        </span>
                         <Button className='flex flex-row gap-2 items-center' onClick={handleAddNewFolder}>
-                            <span className='i-fluent:folder-add-20-regular w-5 h-5' />Add Folders
+                            <span className='i-fluent:folder-add-20-regular w-5 h-5' />
+                            <FormattedMessage defaultMessage='Add Folders' />
                         </Button>
                         <div onClick={() => {
                             setLocalFolderExpanded(!localFolderExpanded);
@@ -167,7 +193,9 @@ export default function Settings () {
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
-                        <span className='grow-1'>Auto-scanning behavior</span>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Auto-scanning behavior' />
+                        </span>
                         <Select value={localAutoScan} options={autoScanOptions} position='left' onChange={(value) => {
                             setLocalAutoScan(value);
                         }} />
@@ -176,45 +204,69 @@ export default function Settings () {
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
-                        <span className='grow-1'>Scan folders</span>
-                        {!localScanned && <span className='font-size-sm color-text-sec'>Scanning...</span>}
-                        <Button className='flex flex-row gap-2 items-center' onClick={localStorage.scan} disabled={!localScanned}>Start</Button>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Scan folders' />
+                        </span>
+                        {!localScanned && <span className='font-size-sm color-text-sec'>
+                            <FormattedMessage defaultMessage='Scanning...' />
+                        </span>}
+                        <Button className='flex flex-row gap-2 items-center' onClick={localStorage.scan} disabled={!localScanned}>
+                            <FormattedMessage defaultMessage='Start' />
+                        </Button>
                     </div>
                 </Card>
-                <span className='color-text-pri font-size-sm my-2'>WebDAV</span>
+                <span className='color-text-pri font-size-sm my-2'>
+                    <FormattedMessage defaultMessage='WebDAV' />
+                </span>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:globe-24-regular w-5 h-5' />
-                        <span className='grow-1'>Remote storages</span>
-                        <Button className='flex flex-row gap-2 items-center'><span className='i-fluent:add-circle-20-regular w-5 h-5' />Add</Button>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Remote storages' />
+                        </span>
+                        <Button className='flex flex-row gap-2 items-center'><span className='i-fluent:add-circle-20-regular w-5 h-5' />
+                            <FormattedMessage defaultMessage='Add' />
+                        </Button>
                     </div>
                 </Card>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:database-arrow-down-20-regular w-5 h-5' />
-                        <span className='grow-1'>Cache remote songs in local</span>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Cache remote songs in local' />
+                        </span>
                         <Switch />
                     </div>
                 </Card>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
-                        <span className='grow-1'>Auto-scanning behavior</span>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Auto-scanning behavior' />
+                        </span>
                         <Select value={localAutoScan} options={autoScanOptions} />
                     </div>
                 </Card>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
-                        <span className='grow-1'>Scan storages</span>
-                        <Button className='flex flex-row gap-2 items-center'>Start</Button>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Scan storages' />
+                        </span>
+                        <Button className='flex flex-row gap-2 items-center'>
+                            <FormattedMessage defaultMessage='Start' />
+                        </Button>
                     </div>
                 </Card>
-                <span className='color-text-pri font-size-sm my-2'>NetEase Cloud Music</span>
+                <span className='color-text-pri font-size-sm my-2'>
+                    <FormattedMessage defaultMessage='NetEase Cloud Music' />
+                </span>
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:person-24-regular w-5 h-5' />
-                        <span className='grow-1'>Account</span>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='163 Account' />
+                        </span>
                         <Button onClick={() => {
                             if (ncmLoggedIn) {
                                 setNCMCookie(undefined);
@@ -225,19 +277,25 @@ export default function Settings () {
                         }} className='flex flex-row gap-2 items-center'>{ncmLoggedIn ? (
                                 <>
                                     <span className='i-fluent:arrow-exit-20-regular w-5 h-5' />
-                                    <span>Sign Out</span>
+                                    <span>
+                                        <FormattedMessage defaultMessage='Sign Out' />
+                                    </span>
                                 </>
                             ) : (
                                 <>
                                     <span className='i-fluent:arrow-enter-20-regular w-5 h-5' />
-                                    <span>Sign In</span>
+                                    <span>
+                                        <FormattedMessage defaultMessage='Sign In' />
+                                    </span>
                                 </>
                                 
                             )}</Button>
                         <Modal open={ncmAuthModalOpen} onClose={() => {
                             setNcmAuthModalOpen(false);
                         }} className='flex flex-col gap-4'>
-                            <span className='font-(size-xl 500)'>Sign In</span>
+                            <span className='font-(size-xl 500)'>
+                                <FormattedMessage defaultMessage='Sign In' />
+                            </span>
                             <div className='flex items-center gap-6'>
                                 {qr ? (
                                     <div>
@@ -262,10 +320,10 @@ export default function Settings () {
                                                 <Button size='lg' onClick={() => {
                                                     setNcmAuthModalOpen(false);
                                                 } }>
-                                                    Cancel
+                                                    <FormattedMessage defaultMessage='Cancel' />
                                                 </Button>
                                                 <Button variant='primary' size='lg'>
-                                                    Sign In
+                                                    <FormattedMessage defaultMessage='Sign In' />
                                                 </Button>
                                             </div>
                                         </form>
@@ -287,7 +345,9 @@ export default function Settings () {
                 <Card className='flex flex-col gap-2 color-text-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
-                        <span className='grow-1'>Sync song lists</span>
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Sync song lists' />
+                        </span>
                         <Switch />
                     </div>
                 </Card>

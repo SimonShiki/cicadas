@@ -8,6 +8,7 @@ import SongItem from '../components/song-item';
 import * as player from '../utils/player';
 import Button from '../components/base/button';
 import ArtistItem from '../components/artist-item';
+import { FormattedMessage } from 'react-intl';
 
 export default function ArtistPage () {
     const scanned = useAtomValue(scannedJotai);
@@ -23,12 +24,16 @@ export default function ArtistPage () {
     return (
         <main className='flex flex-col h-[calc(100vh-100px)]'>
             <div className='flex flex-col gap-4 pl-2 pt-4'>
-                <span className='color-text-pri font-size-3xl font-500'>Artists</span>
+                <span className='color-text-pri font-size-3xl font-500'>
+                    <FormattedMessage defaultMessage='Artists' />
+                </span>
                 <div className='flex flex-row items-center gap-4'>
                     {!scanned && (
                         <div className='flex items-center gap-2'>
                             <Spinner size='size-4' />
-                            <span className='font-size-sm'>Scanning...</span>
+                            <span className='font-size-sm'>
+                                <FormattedMessage defaultMessage='Scanning...' />
+                            </span>
                         </div>
                     )}
                 </div>
@@ -56,7 +61,7 @@ export default function ArtistPage () {
                                         onClick={() => setCurrentArtist(null)}
                                     >
                                         <span className='i-fluent:chevron-left-16-regular' />
-                                        Back
+                                        <FormattedMessage defaultMessage='Back' />
                                     </Button>
                                     <h2 className='text-xl font-semibold'>{currentArtist.name}</h2>
                                 </div>

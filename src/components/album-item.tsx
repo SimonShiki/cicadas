@@ -1,3 +1,4 @@
+import { FormattedMessage } from 'react-intl';
 import { Album } from '../jotais/library';
 
 interface AlbumItemProps {
@@ -13,7 +14,9 @@ export default function AlbumItem ({album, onClick}: AlbumItemProps) {
             <img draggable={false} src={album.cover} alt={album.name} className='w-36 h-36 aspect-square rounded-md border-(1 solid outline-sec)'/>
             <div className='flex flex-col *:text-ellipsis text-nowrap *:overflow-hidden max-w-30'>
                 <span className='font-500'>{album.name}</span>
-                <span className='font-size-sm color-text-sec'>{album.songs.length} Songs</span>
+                <span className='font-size-sm color-text-sec'>
+                    <FormattedMessage defaultMessage='{total} Songs' values={{ total: album.songs.length }} />
+                </span>
             </div>
         </div>
     );

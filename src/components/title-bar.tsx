@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { nowPlayingPageJotai } from '../jotais/play';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { FormattedMessage } from 'react-intl';
 
 const appWindow = getCurrentWindow();
 
@@ -47,7 +48,7 @@ export default function TitleBar () {
                 <span className={`i-fluent:arrow-left-16-regular ${focus ? 'opacity-100' : 'opacity-40'}`} />
             </div>
             <span data-tauri-drag-region className={`color-text-pri ${fullscreen ? 'color-white' : ''} transition-color dark:color-text-dark-pri font-size-xs grow-1 pl-4 ${focus ? 'color-opacity-100' : 'color-opacity-40'}`}>
-                Cicadas
+                <FormattedMessage defaultMessage='Cicadas' />
             </span>
             <div onClick={() => {
                 appWindow.minimize();

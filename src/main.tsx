@@ -7,12 +7,15 @@ import router from './router';
 import { Provider } from 'jotai';
 import TitleBar from './components/title-bar';
 import sharedStore from './jotais/shared-store';
+import LocaleProvider from './components/locale-provider';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
         <Provider store={sharedStore}>
-            <TitleBar />
-            <RouterProvider router={router} />
+            <LocaleProvider >
+                <TitleBar />
+                <RouterProvider router={router} />
+            </LocaleProvider>
         </Provider>
-    </React.StrictMode>,
+    </React.StrictMode>
 );

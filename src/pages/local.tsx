@@ -12,6 +12,7 @@ import * as player from '../utils/player';
 import { useCallback, useEffect, useState } from 'react';
 import { filterSongList, SortOptions, sortSongList } from '../utils/sort';
 import { nowPlayingBarJotai } from '../jotais/play';
+import { FormattedMessage, useIntl } from 'react-intl';
 
 const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
 const songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));
@@ -32,6 +33,7 @@ export default function Local () {
     const scanned = useAtomValue(scannedJotai);
     const [keyword, setKeyword] = useState('');
     const [sortBy, setSortBy] = useState<SortOptions>('a-z');
+    const intl = useIntl();
     const handleClickSong = useCallback((song: Song<'local'>) => {
         player.clearPlaylist();
         player.addToPlaylist(...list);
@@ -55,19 +57,27 @@ export default function Local () {
     return (
         <main className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 pl-2'>
-                <span className='color-text-pri font-size-3xl font-500'>Local</span>
+                <span className='color-text-pri font-size-3xl font-500'>
+                    <FormattedMessage defaultMessage='Local' />
+                </span>
                 <div className='flex flex-row items-center gap-4'>
-                    <Button onClick={handleRandomPlay} variant='primary' className='flex flex-row gap-2 items-center'><span className='i-fluent:arrow-shuffle-20-regular w-5 h-5' />Random</Button>
+                    <Button onClick={handleRandomPlay} variant='primary' className='flex flex-row gap-2 items-center'><span className='i-fluent:arrow-shuffle-20-regular w-5 h-5' />
+                        <FormattedMessage defaultMessage='Random' />
+                    </Button>
                     {!scanned && (
                         <div className='flex items-center gap-2'>
                             <Spinner size='size-4' />
-                            <span className='font-size-sm'>Scanning...</span>
+                            <span className='font-size-sm'>
+                                <FormattedMessage defaultMessage='Scanning...' />
+                            </span>
                         </div>
                     )}
-                    <Input placeholder='Search' value={keyword} onChange={(e) => {
+                    <Input placeholder={intl.formatMessage({ defaultMessage: 'Search'})} value={keyword} onChange={(e) => {
                         setKeyword(e.target.value);
                     }} after={<span className='i-fluent:search-20-regular' />} className='m-l-auto' />
-                    <span className='color-text-pri font-size-sm'>Sort By:</span>
+                    <span className='color-text-pri font-size-sm'>
+                        <FormattedMessage defaultMessage='Sort By:' />
+                    </span>
                     <Select position='left' options={sortOptions} onChange={option => {
                         setSortBy(option);
                     }} value={sortBy} />
