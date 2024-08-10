@@ -1,10 +1,16 @@
 import { listen } from '@tauri-apps/api/event';
-import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai, streamingJotai } from '../jotais/play';
+import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai, streamingJotai, bufferingJotai } from '../jotais/play';
 import sharedStore from '../jotais/shared-store';
 import { Song, storagesJotai } from '../jotais/storage';
 import { invoke } from '@tauri-apps/api/core';
+import { settingsJotai } from '../jotais/settings';
+import { transformChunk } from './chunk-transformer';
+import { focusAtom } from 'jotai-optics';
+import { WritableAtom } from 'jotai';
+import { SetStateAction } from 'react';
 
 type MediaControlPayload = 'play' | 'pause' | 'toggle' | 'next' | 'previous';
+type UpdateDurationPayload = number;
 
 async function initializeMediaControls () {
     try {
@@ -46,45 +52,48 @@ async function updatePlaybackStatus (isPlaying: boolean) {
 async function playCurrentSong () {
     const currentSong = sharedStore.get(currentSongJotai);
     const volume = sharedStore.get(volumeJotai);
-    if (currentSong) {
+    if (!currentSong) return;
+    pause();
+    sharedStore.set(progressJotai, 0);
+    await updateMediaMetadata(currentSong);
+    if (currentSong.storage === 'local') {
+        await invoke('play_local_file', { filePath: currentSong.path });
         sharedStore.set(beginTimeJotai, Date.now());
-        sharedStore.set(progressJotai, 0);
-        sharedStore.set(playingJotai, true);
-        await updatePlaybackStatus(true);
-        await updateMediaMetadata(currentSong);
-        if (currentSong.storage === 'local') {
-            await invoke('play_local_file', { filePath: currentSong.path });
-            await invoke('set_volume', { volume: volumeToFactor(volume) });
-            sharedStore.set(backendPlayingJotai, true);
-        } else {
-            const storages = sharedStore.get(storagesJotai);
-            const targetStorage = storages[currentSong.storage];
+        play();
+        await invoke('set_volume', { volume: volumeToFactor(volume) });
+        sharedStore.set(backendPlayingJotai, true);
+    } else {
+        const storages = sharedStore.get(storagesJotai);
+        const targetStorage = storages[currentSong.storage];
+        const { streaming } = sharedStore.get(settingsJotai);
+        if (streaming) {
             if (!targetStorage.instance.getMusicStream) {
-                throw new Error(`storage ${currentSong.storage} doesn't implemented music stream`);
+                throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicStream`);
             }
             // Start streaming
-            sharedStore.set(streamingJotai, true);
             if (sharedStore.get(streamingJotai)) {
                 await invoke('end_stream');
             }
 
+            sharedStore.set(streamingJotai, true);
             await invoke('start_streaming');
             console.log('start streaming');
             sharedStore.set(backendPlayingJotai, true);
             await invoke('set_volume', { volume: volumeToFactor(volume) });
-            await pause();
 
             try {
                 const stream = targetStorage.instance.getMusicStream(currentSong.id);
                 let initChunk = false;
+                sharedStore.set(bufferingJotai, true);
                 for await (const chunk of stream) {
                     const streaming = sharedStore.get(streamingJotai);
-                    if (!streaming) return;
+                    if (!streaming) break;
                     console.log('received chunk');
-                    await invoke('add_stream_chunk', { chunk: Array.from(chunk) });
+                    await invoke('add_stream_chunk', { chunk: await transformChunk(chunk) });
                     if (!initChunk) {
                         initChunk = true;
-                        await play();
+                        sharedStore.set(bufferingJotai, false);
+                        play();
                     }
                 }
             } catch (e) {
@@ -94,6 +103,18 @@ async function playCurrentSong () {
                 await invoke('end_stream');
                 sharedStore.set(streamingJotai, false);
             }
+        } else {
+            if (!targetStorage.instance.getMusicBuffer) {
+                throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicBuffer`);
+            }
+
+            sharedStore.set(bufferingJotai, true);
+            const buffer = await targetStorage.instance.getMusicBuffer(currentSong.id);
+            await invoke('play_arraybuffer', { buffer: await transformChunk(buffer) });
+            play();
+            await invoke('set_volume', { volume: volumeToFactor(volume) });
+            sharedStore.set(backendPlayingJotai, true);
+            sharedStore.set(bufferingJotai, false);
         }
     }
 }
@@ -119,7 +140,22 @@ function setupEventListeners () {
         }
     });
 
-    sharedStore.sub(currentSongJotai, playCurrentSong);
+    listen<UpdateDurationPayload>('update_duration', (e) => {
+        const currentSong = sharedStore.get(currentSongJotai);
+        if (!currentSong) return;
+
+        const durationJotai = focusAtom(currentSongJotai as WritableAtom<Song<string>, [SetStateAction<Song<string>>], void>, (optic) => optic.prop('duration'));
+        sharedStore.set(durationJotai, e.payload);
+    });
+
+    let prevsongId: string | number = -1;
+    sharedStore.sub(currentSongJotai, () => {
+        const currentSong = sharedStore.get(currentSongJotai);
+        if (currentSong && prevsongId !== currentSong.id) {
+            playCurrentSong();
+            prevsongId = currentSong.id;
+        }
+    });
 
     sharedStore.sub(playingJotai, async () => {
         const backendPlaying = sharedStore.get(backendPlayingJotai);
@@ -183,7 +219,7 @@ async function checkSongProgress () {
     const playmode = sharedStore.get(playModeJotai);
     const progress = sharedStore.get(progressJotai);
 
-    if (playing && song && ((song.duration ?? Infinity) / 1000) - progress <= 0.1) {
+    if (playing && song && ((song.duration ?? Infinity) / 1000) - progress <= 0.01) {
         sharedStore.set(backendPlayingJotai, false);
         switch (playmode) {
         case 'single-recycle':

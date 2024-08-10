@@ -34,6 +34,30 @@ a {
   animation-duration: 150ms;
 }
 
+.progress-animation {
+  animation-name: progress-animation;
+  animation-timing-function: ease-in-out;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes progress-animation {
+  0% {
+    width: 0;
+    transform: translateX(0);
+  }
+
+  50% {
+    width: 10rem;
+    transform: translateX(50vh);
+  }
+
+  100% {
+    width: 0;
+    transform: translateX(120vh);
+  }
+}
+
 @keyframes fadein {
   from {
     translate: 0 40vh;

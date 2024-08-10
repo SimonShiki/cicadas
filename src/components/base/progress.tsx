@@ -7,6 +7,7 @@ interface ProgressProps {
     color?: string;
     height?: string;
     animated?: boolean;
+    infinite?: boolean;
 }
 
 const Progress: React.FC<ProgressProps> = ({
@@ -16,6 +17,7 @@ const Progress: React.FC<ProgressProps> = ({
     color = 'bg-fg-pri',
     height = 'h-1',
     animated = true,
+    infinite,
 }) => {
     const [width, setWidth] = useState(0);
 
@@ -26,12 +28,14 @@ const Progress: React.FC<ProgressProps> = ({
 
     return (
         <div className={`w-full ${height} bg-bg-sec dark:bg-bg-dark-sec rounded-full overflow-hidden ${className}`}>
-            <div
-                className={`h-full ${color} rounded-full ${animated ? 'transition-all duration-500 ease-out' : ''}`}
-                style={{ width: `${width}%` }}
-            >
-                <div className={`h-full ${animated ? 'animate-pulse' : ''}`} />
-            </div>
+            {infinite ? (
+                <div className={`h-full ${color} progress-animation`} />
+            ) : (
+                <div
+                    className={`h-full ${color} rounded-full ${animated ? 'transition-all duration-500 ease-out' : ''}`}
+                    style={{ width: `${width}%` }}
+                />
+            )}
         </div>
     );
 };

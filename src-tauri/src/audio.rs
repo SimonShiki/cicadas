@@ -6,7 +6,7 @@ use std::time::Duration;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use crate::error::AppError;
-use tauri::State;
+use tauri::{Emitter, State};
 
 type Result<T> = std::result::Result<T, AppError>;
 
@@ -252,7 +252,7 @@ impl From<rodio::decoder::DecoderError> for AppError {
 }
 
 #[tauri::command]
-pub async fn play_local_file(audio_state: State<'_, AudioState>, file_path: String) -> Result<()> {
+pub async fn play_local_file(app: tauri::AppHandle, audio_state: State<'_, AudioState>, file_path: String) -> Result<()> {
     let path = Path::new(&file_path);
     if !path.exists() {
         return Err(AppError::FileNotFound(file_path));
@@ -271,8 +271,40 @@ pub async fn play_local_file(audio_state: State<'_, AudioState>, file_path: Stri
     let sink = Sink::try_new(&audio_state.stream_handle)
         .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
 
+    // Report the actual duration
+    let _ = app.emit("update_duration", source.total_duration().unwrap().as_millis());
+    
     sink.append(source);
 
+    *sink_guard = Some(sink);
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn play_arraybuffer(app: tauri::AppHandle, audio_state: State<'_, AudioState>, buffer: Vec<u8>) -> Result<()> {
+    let mut sink_guard = audio_state.sink.lock().unwrap();
+    if let Some(sink) = sink_guard.take() {
+        sink.stop();
+    }
+
+    // Use a cursor to wrap the buffer and create a source from it
+    let cursor = Cursor::new(buffer);
+
+    // Decode the audio data from the buffer
+    let source = Decoder::new(cursor).map_err(|e| AppError::DecodeError(e.to_string()))?;
+
+    // Create a new sink for playback
+    let sink = Sink::try_new(&audio_state.stream_handle)
+        .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
+
+    // Report the actual duration
+    let _ = app.emit("update_duration", source.total_duration().unwrap().as_millis());
+    
+    // Append the source to the sink
+    sink.append(source);
+
+    // Replace the old sink with the new one
     *sink_guard = Some(sink);
 
     Ok(())

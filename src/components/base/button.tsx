@@ -14,7 +14,7 @@ export interface ButtonProps extends PropsWithChildren {
 const gapMap = {
     sm: 'px-1 py-0.5',
     md: 'px-2 py-1.5',
-    lg: 'p-3 py-2.5'
+    lg: 'p-3 py-2'
 };
 
 export default forwardRef<HTMLButtonElement, ButtonProps>(function Button ({
@@ -29,7 +29,7 @@ export default forwardRef<HTMLButtonElement, ButtonProps>(function Button ({
     children
 }, ref) {
     const variantClasses = {
-        primary: 'bg-fg-pri color-white hover:bg-[#a36fae] hover:!border-[#a36fae] active:color-op-60 active:bg-[#a36fae] active:!border-[#a36fae] !border-fg-pri disabled:bg-[#99ceff] dark:disabled:bg-[#0a4380] disabled:!border-opacity-60 disabled:hover:bg-[#99ceff] dark:disabled:hover:!bg-[#0a4380] disabled:active:bg-[#99ceff] dark:disabled:active:bg-[#0a4380]',
+        primary: 'bg-fg-pri color-white hover:bg-[#a36fae] hover:!border-[#a36fae] active:color-op-60 active:bg-[#a36fae] active:!border-[#a36fae] !border-fg-pri font-600 disabled:bg-[#99ceff] dark:disabled:bg-[#0a4380] disabled:!border-opacity-60 disabled:hover:bg-[#99ceff] dark:disabled:hover:!bg-[#0a4380] disabled:active:bg-[#99ceff] dark:disabled:active:bg-[#0a4380]',
         secondary: 'bg-white border-b-outline-sec active:border-b-outline-pri dark:bg-bg-dark-pri color-text-pri dark:color-text-dark-pri hover:bg-bg-pri dark:hover:bg-bg-dark-sec border-outline-pri dark:border-outline-dark-pri active:bg-bg-sec dark:active:bg-bg-dark-sec disabled:hover:bg-white disabled:dark:hover:bg-black disabled:active:bg-white dark:disabled:active:bg-black',
         error: 'bg-red-500 color-white hover:bg-red-600 active:bg-red-900 !border-red-500 disabled:bg-red-300 dark:disabled:bg-[#832126] disabled:!border-red-300 dark:disabled:!border-[#832126] disabled:hover:bg-red-300 dark:disabled:hover:bg-[#832126] disabled:active:bg-red-300 dark:disabled:active:bg-[#832126]'
     };

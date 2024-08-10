@@ -6,10 +6,12 @@ export interface StorageConfig<Idenfiter extends string> {
 }
 
 export interface Setting {
+    streaming: boolean;
     storages: Record<string, StorageConfig<string> | undefined>;
 }
 
 export const settingsJotai = atomWithStorage<Setting>('settings', {
+    streaming: false,
     storages: {}
 }, undefined, {
     getOnInit: true

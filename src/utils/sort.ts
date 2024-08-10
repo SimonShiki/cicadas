@@ -17,3 +17,12 @@ export function sortSongList<T extends string> (list: Song<T>[], by: SortOptions
         return list;
     }
 }
+
+export function filterSongList<T extends string> (list: Song<T>[], keyword: string) {
+    return list.filter(song => (
+        song.name.includes(keyword) ||
+        song.artist?.includes(keyword) || 
+        song.path?.includes(keyword)
+    ));
+}
+

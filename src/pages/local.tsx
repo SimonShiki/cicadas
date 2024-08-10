@@ -10,7 +10,7 @@ import { focusAtom } from 'jotai-optics';
 import Spinner from '../components/base/spinner';
 import * as player from '../utils/player';
 import { useCallback, useEffect, useState } from 'react';
-import { SortOptions, sortSongList } from '../utils/sort';
+import { filterSongList, SortOptions, sortSongList } from '../utils/sort';
 import { nowPlayingBarJotai } from '../jotais/play';
 
 const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
@@ -30,6 +30,7 @@ export default function Local () {
     const [list, setList] = useState(_list);
     const barOpen = useAtomValue(nowPlayingBarJotai);
     const scanned = useAtomValue(scannedJotai);
+    const [keyword, setKeyword] = useState('');
     const [sortBy, setSortBy] = useState<SortOptions>('a-z');
     const handleClickSong = useCallback((song: AbstractSong<'local'>) => {
         player.clearPlaylist();
@@ -37,8 +38,12 @@ export default function Local () {
         player.setCurrentSong(song);
     }, [list]);
     useEffect(() => {
-        setList(sortSongList(_list, sortBy));
-    }, [_list, sortBy]);
+        let ir = sortSongList(_list, sortBy);
+        if (keyword.trim() !== '') {
+            ir = filterSongList(list, keyword);
+        }
+        setList(ir);
+    }, [_list, keyword, sortBy]);
     return (
         <main className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 pl-2'>
@@ -51,7 +56,9 @@ export default function Local () {
                             <span className='font-size-sm'>Scanning...</span>
                         </div>
                     )}
-                    <Input placeholder='Search' after={<span className='i-fluent:search-20-regular' />} className='m-l-auto' />
+                    <Input placeholder='Search' value={keyword} onChange={(e) => {
+                        setKeyword(e.target.value);
+                    }} after={<span className='i-fluent:search-20-regular' />} className='m-l-auto' />
                     <span className='color-text-pri font-size-sm'>Sort By:</span>
                     <Select position='left' options={sortOptions} onChange={option => {
                         setSortBy(option);
