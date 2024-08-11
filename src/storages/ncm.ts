@@ -298,10 +298,10 @@ export class NCM implements AbstractStorage {
     private initListener () {
         const loggedInJotai = focusAtom(this.ncmStorageConfigJotai, (optic) => optic.prop('loggedIn'));
         sharedStore.sub(loggedInJotai, async () => {
-            const ncmConfig = sharedStore.get(this.ncmStorageConfigJotai) as NCMConfig;
             const loggedIn = sharedStore.get(loggedInJotai);
             if (loggedIn) {
                 const { userId } = await this.getProfile();
+                const ncmConfig = sharedStore.get(this.ncmStorageConfigJotai) as NCMConfig;
                 sharedStore.set(this.ncmStorageConfigJotai, {...ncmConfig, ...{uid: userId}});
             }
         });
@@ -335,6 +335,7 @@ export class NCM implements AbstractStorage {
     }
 
     private get config () {
+        console.log(sharedStore.get(this.ncmStorageConfigJotai));
         return (sharedStore.get(this.ncmStorageConfigJotai) ?? defaultConfig) as NCMConfig;
     }
 

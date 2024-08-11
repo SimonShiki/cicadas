@@ -13,8 +13,23 @@ function App () {
 
     useEffect(() => {
         const disableContextMenu = (event: MouseEvent) => event.preventDefault();
+        const disableRefresh = (event: KeyboardEvent) => {
+            if (
+                event.key === 'F5' ||
+                (event.ctrlKey && event.key === 'r') ||
+                (event.metaKey && event.key === 'r')
+            ) {
+                event.preventDefault();
+            }
+        };
+        if (import.meta.env.PROD) {
+            document.addEventListener('keydown', disableRefresh);
+        }
         document.addEventListener('contextmenu', disableContextMenu);
-        return () => document.removeEventListener('contextmenu', disableContextMenu);
+        return () => {
+            document.removeEventListener('contextmenu', disableContextMenu);
+            document.removeEventListener('keydown', disableRefresh);
+        };
     }, []);
     return (
         <div className='flex flex-row'>

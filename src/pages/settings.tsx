@@ -64,7 +64,7 @@ export default function Settings () {
         }
         async function qrLogin () {
             const keyRes = await fetch(`${ncmConfig.api}login/qr/key`);
-            const { data: keyData } = await keyRes.json();
+            const {data: keyData} = await keyRes.json();
             const imgRes = await fetch(`${ncmConfig.api}login/qr/create?key=${keyData.unikey}&qrimg=1&t=${Date.now()}`);
             const {data: imageData} = await imgRes.json();
             setQrUrl(imageData.qrimg);
@@ -76,6 +76,8 @@ export default function Settings () {
                 switch (checkData.code) {
                 // expired
                 case 800: {
+                    const keyRes = await fetch(`${ncmConfig.api}login/qr/key`);
+                    const { data: keyData } = await keyRes.json();
                     const imgRes = await fetch(`${ncmConfig.api}login/qr/create?key=${keyData.unikey}&t=${Date.now()}`);
                     const { data: imageData } = await imgRes.json();
                     setQrUrl(imageData.qrimg);
