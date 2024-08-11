@@ -255,9 +255,9 @@ export class NCM implements AbstractStorage {
     }
 
     private initListener () {
-        const ncmConfig = sharedStore.get(this.ncmStorageConfigJotai) as NCMConfig;
         const loggedInJotai = focusAtom(this.ncmStorageConfigJotai, (optic) => optic.prop('loggedIn'));
         sharedStore.sub(loggedInJotai, async () => {
+            const ncmConfig = sharedStore.get(this.ncmStorageConfigJotai) as NCMConfig;
             const loggedIn = sharedStore.get(loggedInJotai);
             if (loggedIn) {
                 const { userId } = await this.getProfile();
@@ -390,8 +390,11 @@ export class NCM implements AbstractStorage {
     async getRemoteSonglistDetail (id: string | number, limit = 10, page = 1) {
         const offset = (page - 1) * limit;
         const res = await fetch(`${this.config.api}playlist/track/all?id=${id}&limit=${limit}&offset=${offset}${this.config.cookie ? `&cookie=${this.config.cookie}` : ''}`);
-        const { songs } = await res.json();
-        const mappedList: Song<'ncm'>[] = (songs as NCMSonglistTrack[]).map(song => ({
+        const data = await res.json();
+        if (!data.songs) {
+            console.error(data);
+        }
+        const mappedList: Song<'ncm'>[] = (data.songs as NCMSonglistTrack[]).map(song => ({
             id: song.id,
             name: song.name,
             cover: song.al.picUrl,

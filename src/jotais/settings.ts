@@ -1,6 +1,5 @@
 import { focusAtom } from 'jotai-optics';
 import { atomWithStorage } from 'jotai/utils';
-import sharedStore from './shared-store';
 
 export interface StorageConfig<Idenfiter extends string> {
     identifer: Idenfiter;

@@ -13,6 +13,7 @@ import Spinner from '../components/base/spinner';
 import Button from '../components/base/button';
 import SonglistItem from '../components/songlist-item';
 import { FormattedMessage, useIntl } from 'react-intl';
+import Pagination from '../components/base/pagination';
 
 interface NCMProfile {
     nickname: string;
@@ -36,6 +37,9 @@ export default function NCM () {
     const [searchPage, setSearchPage] = useState(1);
     const [showSonglist, setShowSonglist] = useState<string | number | null>(null);
     const [songlistName, setSonglistName] = useState('');
+    const [songlistTotalPage, setSonglistTotalPage] = useState(0);
+    const [songlistPage, setSonglistPage] = useState(0);
+
     const [songlistDetail, setSonglistDetail] = useState<AbstractSong<'ncm'>[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
@@ -68,6 +72,18 @@ export default function NCM () {
         updateSearchResult();
     }, [isSearching, searchText, ncmInstance]);
 
+    useEffect(() => {
+        if (!showSonglist || !songlistPage) return;
+        ncmInstance.getRemoteSonglistDetail(showSonglist as number, 10, songlistPage).then((detail) => {
+            setSonglistDetail(detail);
+        });
+    }, [songlistPage]);
+
+    useEffect(() => {
+        if (showSonglist) return;
+        setSonglistPage(0);
+    }, [showSonglist]);
+
     const handleClickSong = useCallback((song: AbstractSong<'ncm'>, playlist: AbstractSong<'ncm'>[]) => {
         player.clearPlaylist();
         player.addToPlaylist(...playlist);
@@ -87,7 +103,9 @@ export default function NCM () {
     const handleClickRemoteSonglist = useCallback(async (id: string | number, index: number) => {
         setShowSonglist(id);
         setSonglistName(songlist[index].name);
-        setSonglistDetail(await ncmInstance.getRemoteSonglistDetail(id));
+        setSonglistDetail([]);
+        setSonglistPage(1);
+        setSonglistTotalPage(Math.ceil(songlist[index].trackCount / 10));
     }, [songlist, ncmInstance]);
 
     const intl = useIntl();
@@ -205,17 +223,21 @@ export default function NCM () {
                         </span>
                     </Button>
                 </div>
-                <Virtuoso
-                    className="flex-1"
-                    totalCount={barOpen ? songlistDetail.length + 1 : songlistDetail.length}
-                    itemContent={(index) => {
-                        if (index === songlistDetail.length) {
-                            return <div className="h-20" />;
-                        }
-                        const song = songlistDetail[index];
-                        return <SongItem song={song} onClick={() => handleClickSong(song, songlistDetail)} hideBg={!(index % 2)} />;
-                    }}
-                />
+                {songlistDetail.length > 0 ? (
+                    <Virtuoso
+                        className="flex-1"
+                        totalCount={songlistDetail.length}
+                        itemContent={(index) => {
+                            const song = songlistDetail[index];
+                            return <SongItem song={song} onClick={() => handleClickSong(song, songlistDetail)} hideBg={!(index % 2)} />;
+                        }}
+                    />
+                ) : (
+                    <div className='w-full h-full flex justify-center items-center'>
+                        <Spinner />
+                    </div>
+                )}
+                <Pagination totalPages={songlistTotalPage} className={`mx-auto ${barOpen ? 'mb-20' : ''}`} currentPage={songlistPage} onPageChange={setSonglistPage} />
             </div>
         );
     }

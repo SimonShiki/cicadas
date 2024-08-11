@@ -56,7 +56,7 @@ export default function Pagination ({ currentPage, totalPages, onPageChange, siz
                     onPageChange(pageNumber);
                 }
             }}
-            className={size === 'md' ? 'px-4 h-10' : 'px-2 h-6'}
+            className={size === 'md' ? 'px-3 h-8' : 'px-2 h-6'}
             iconOnly
         >
             {pageNumber}
@@ -72,10 +72,10 @@ export default function Pagination ({ currentPage, totalPages, onPageChange, siz
             <Button
                 onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className={`${size === 'md' ? 'w-10 h-10' : 'w-6 h-6'} group flex justify-center items-center`}
+                className={`${size === 'md' ? 'w-8 h-8' : 'w-6 h-6'} group flex justify-center items-center`}
                 iconOnly
             >
-                <span className={`i-ph:caret-left-bold ${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'} color-text-pri group-disabled:color-outline-sec dark:color-text-dark-pri dark:group-disabled:color-outline-dark-sec`} />
+                <span className={`i-fluent:chevron-left-16-regular ${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'} color-text-pri group-disabled:color-outline-sec dark:color-text-dark-pri dark:group-disabled:color-outline-dark-sec`} />
             </Button>
 
             {renderPageNumbers()}
@@ -83,10 +83,10 @@ export default function Pagination ({ currentPage, totalPages, onPageChange, siz
             <Button
                 onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className={`${size === 'md' ? 'w-10 h-10' : 'w-6 h-6'} group flex justify-center items-center`}
+                className={`${size === 'md' ? 'w-8 h-8' : 'w-6 h-6'} group flex justify-center items-center`}
                 iconOnly
             >
-                <span className={`i-ph:caret-right-bold ${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'} color-text-pri group-disabled:color-outline-sec dark:color-text-dark-pri dark:group-disabled:color-outline-dark-sec`} />
+                <span className={`i-fluent:chevron-right-16-regular ${size === 'md' ? 'w-4 h-4' : 'w-3 h-3'} color-text-pri group-disabled:color-outline-sec dark:color-text-dark-pri dark:group-disabled:color-outline-dark-sec`} />
             </Button>
         </div>
     );
