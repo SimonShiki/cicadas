@@ -10,7 +10,7 @@ import * as player from '../utils/player';
 import Button from '../components/base/button';
 import { FormattedMessage } from 'react-intl';
 
-export default function AlbumPage() {
+export default function AlbumPage () {
     const scanned = useAtomValue(scannedJotai);
     const albums = useAtomValue(albumsJotai);
     const [currentAlbum, setCurrentAlbum] = useState<Album | null>(null);

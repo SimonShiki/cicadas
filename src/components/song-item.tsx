@@ -3,6 +3,9 @@ import defaultCover from '../assets/default-cover.png';
 import Card from './base/card';
 import { IconMenuItem, Menu, MenuItem, NativeIcon, PredefinedMenuItem, Submenu } from '@tauri-apps/api/menu';
 import { useCallback } from 'react';
+import { useAtom } from 'jotai';
+import { songlistsJotai } from '../jotais/library';
+import * as player from '../utils/player';
 
 interface SongItemProps {
     song: AbstractSong<string>;
@@ -11,13 +14,14 @@ interface SongItemProps {
 }
 
 export default function SongItem (props: SongItemProps) {
+    const [songlists, setSonglists] = useAtom(songlistsJotai);
     const showContextMenu = useCallback(async () => {
         const menu = await Menu.new({
             items: [
                 await MenuItem.new({
                     text: 'Play',
                     action: () => {
-                        props.onClick(props.song);
+                        player.setCurrentSong(props.song);
                     }
                 }),
                 await MenuItem.new({
@@ -31,7 +35,18 @@ export default function SongItem (props: SongItemProps) {
                 }),
                 await Submenu.new({
                     text: 'Add to',
-                    items: []
+                    items: await Promise.all(songlists.map((songlist, index) => (MenuItem.new({
+                        text: songlist.name,
+                        action: () => {
+                            const newSonglist = {
+                                ...songlist,
+                                songs: [...songlist.songs, props.song]
+                            };
+                            const newSonglists = [...songlists];
+                            newSonglists[index] = newSonglist;
+                            setSonglists(newSonglists);
+                        }
+                    }))))
                 }),
                 await IconMenuItem.new({
                     icon: NativeIcon.Remove,
@@ -44,7 +59,7 @@ export default function SongItem (props: SongItemProps) {
             ]
         });
         menu.popup();
-    }, []);
+    }, [songlists]);
 
     return (
         <Card onContextMenu={showContextMenu} onDoubleClick={() => {

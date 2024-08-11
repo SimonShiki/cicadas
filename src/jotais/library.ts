@@ -1,6 +1,7 @@
 import { atom } from 'jotai';
 import { scannedJotai, Song, storagesJotai } from './storage';
 import sharedStore from './shared-store';
+import { atomWithStorage } from 'jotai/utils';
 
 export const libraryJotai = atom<Song<string>[]>([]);
 sharedStore.sub(scannedJotai, () => {
@@ -77,3 +78,10 @@ sharedStore.sub(libraryJotai, () => {
 
     sharedStore.set(artistsJotai, Object.values(artists));
 });
+
+export interface Songlist {
+    name: string;
+    songs: Song<string>[];
+}
+
+export const songlistsJotai = atomWithStorage<Songlist[]>('songlist', []);

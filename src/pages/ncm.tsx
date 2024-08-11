@@ -197,7 +197,7 @@ export default function NCM () {
                                 return <div className="h-20" />;
                             }
                             const list = songlist[index];
-                            return <SonglistItem id={list.id} index={index} name={list.name} cover={list.coverImgUrl} onClick={handleClickRemoteSonglist} hideBg={!(index % 2)} />;
+                            return <SonglistItem id={list.id} total={list.trackCount} index={index} name={list.name} cover={list.coverImgUrl} onClick={handleClickRemoteSonglist} hideBg={!(index % 2)} />;
                         }}
                     />
                 ) : (
