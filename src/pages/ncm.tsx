@@ -6,7 +6,7 @@ import Input from '../components/base/input';
 import { SetStateAction, useCallback, useEffect, useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { nowPlayingBarJotai } from '../jotais/play';
-import { storagesJotai, type Song as AbstractSong } from '../jotais/storage';
+import { Song, storagesJotai, type Song as AbstractSong } from '../jotais/storage';
 import SongItem from '../components/song-item';
 import * as player from '../utils/player';
 import Spinner from '../components/base/spinner';
@@ -171,7 +171,9 @@ export default function NCM () {
                             return renderLoadMoreButton();
                         }
                         const song = searchResult[index];
-                        return <SongItem song={song} onClick={() => handleClickSong(song, searchResult)} hideBg={!(index % 2)} />;
+                        return <SongItem onAddToLib={(song) => {
+                            ncmInstance.addToLib(song as Song<'ncm'>);
+                        }} song={song} onClick={() => handleClickSong(song, searchResult)} hideBg={!(index % 2)} />;
                     }}
                 />
             </div>
@@ -227,7 +229,9 @@ export default function NCM () {
                         totalCount={songlistDetail.length}
                         itemContent={(index) => {
                             const song = songlistDetail[index];
-                            return <SongItem song={song} onClick={() => handleClickSong(song, songlistDetail)} hideBg={!(index % 2)} />;
+                            return <SongItem onAddToLib={(song) => {
+                                ncmInstance.addToLib(song as Song<'ncm'>);
+                            }} song={song} onClick={() => handleClickSong(song, songlistDetail)} hideBg={!(index % 2)} />;
                         }}
                     />
                 ) : (

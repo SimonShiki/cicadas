@@ -32,7 +32,7 @@ export default function Navigation () {
         {
             section: intl.formatMessage({ defaultMessage: 'Storage' }), items: [
                 { path: '/local', icon: 'i-fluent:folder-20-regular', label: intl.formatMessage({ defaultMessage: 'Local' }) },
-                { path: '/webdav', icon: 'i-fluent:folder-globe-20-regular', label: intl.formatMessage({ defaultMessage: 'WebDAV' }) },
+                /* { path: '/webdav', icon: 'i-fluent:folder-globe-20-regular', label: intl.formatMessage({ defaultMessage: 'WebDAV' }) }, */
                 { path: '/ncm', icon: 'i-simple-icons:neteasecloudmusic', label: intl.formatMessage({ defaultMessage: 'NCM' }) },
             ]
         },

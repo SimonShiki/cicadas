@@ -14,14 +14,6 @@ import Input from '../components/base/input';
 import { SortOptions, sortSongList } from '../utils/sort';
 import Select from '../components/base/select';
 
-const sortOptions = [
-    { value: 'default', label: 'Default' } as const,
-    { value: 'a-z', label: 'A - Z' } as const,
-    { value: 'z-a', label: 'Z - A' } as const,
-    { value: 'time_desc', label: 'Time (Reversed)' } as const,
-    { value: 'time_asc', label: 'Time' } as const
-];
-
 export default function SonglistPage () {
     const scanned = useAtomValue(scannedJotai);
     const intl = useIntl();
@@ -30,6 +22,15 @@ export default function SonglistPage () {
     const [_currentSonglist, _setCurrentSonglist] = useState<Songlist | null>(null);
     const [currentSonglist, setCurrentSonglist] = useState<Songlist | null>(null);
     const [sortBy, setSortBy] = useState<SortOptions>('a-z');
+
+    const sortOptions = [
+        { value: 'default', label: intl.formatMessage({ defaultMessage: 'Default' }) } as const,
+        { value: 'a-z', label: intl.formatMessage({ defaultMessage: 'A - Z' }) } as const,
+        { value: 'z-a', label: intl.formatMessage({ defaultMessage: 'Z - A' }) } as const,
+        { value: 'time_desc', label: intl.formatMessage({ defaultMessage: 'Time (Reversed)' }) } as const,
+        { value: 'time_asc', label: intl.formatMessage({ defaultMessage: 'Time' }) } as const
+    ];
+
     useEffect(() => {
         if (_currentSonglist === null) {
             setCurrentSonglist(null);
@@ -63,7 +64,7 @@ export default function SonglistPage () {
         player.addToPlaylist(...songlist.songs);
         player.setCurrentSong(songlist.songs[0]);
     }, [songlists]);
-    const handleCreateSonglist = useCallback<React.FormEventHandler<HTMLFormElement>>((e) => {
+    const handleCreateSonglist = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setSonglists([...songlists, {

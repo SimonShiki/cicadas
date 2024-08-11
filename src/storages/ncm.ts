@@ -305,6 +305,18 @@ export class NCM implements AbstractStorage {
                 sharedStore.set(this.ncmStorageConfigJotai, {...ncmConfig, ...{uid: userId}});
             }
         });
+        if (!this.songlistJotai) return;
+        sharedStore.sub(this.songlistJotai, () => {
+            if (!this.songlistJotai) return;
+            const songlist = sharedStore.get(this.songlistJotai);
+            backendStorage.set('cachedNCMSong', songlist);
+        });
+    }
+
+    addToLib (song: Song<'ncm'>) {
+        this.scanned = false;
+        this.songList = [...this.songList, song];
+        this.scanned = true;
     }
 
     private async initSongList () {

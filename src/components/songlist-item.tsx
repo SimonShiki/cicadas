@@ -11,21 +11,24 @@ interface SonglistItemProps {
     name: string;
     cover?: string;
     onClick (id: string | number, index?: number): void;
-    onPlayAll (id: string | number, index?: number): void;
+    onPlayAll? (id: string | number, index?: number): void;
     onDelete? (id: string | number, index?: number): void;
     hideBg?: boolean;
 }
 
 export default function SonglistItem (props: SonglistItemProps) {
     const showContextMenu = useCallback(async () => {
-        const items = [
-            await MenuItem.new({
-                text: 'Play',
-                action: () => {
-                    props.onPlayAll(props.id, props.index);
-                }
-            })
-        ];
+        const items = [];
+        if (props.onPlayAll) {
+            items.push(
+                await MenuItem.new({
+                    text: 'Play',
+                    action: () => {
+                        props.onPlayAll?.(props.id, props.index);
+                    }
+                })
+            );
+        }
         if (props.onDelete) {
             items.push(
                 await MenuItem.new({

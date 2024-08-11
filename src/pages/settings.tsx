@@ -15,16 +15,8 @@ import Modal from '../components/base/modal';
 import md5 from 'md5';
 import { NCMConfig } from '../storages/ncm';
 import Spinner from '../components/base/spinner';
-import { nowPlayingBarJotai } from '../jotais/play';
-import { FormattedMessage } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { langMap } from '../../locales';
-
-const autoScanOptions = [
-    {value: 'startup', label: 'Each startup'} as const,
-    { value: 'daily', label: 'Daily' } as const,
-    { value: 'weekly', label: 'Weekly' } as const,
-    { value: 'never', label: 'Never' } as const
-];
 
 const streamingJotai = focusAtom(settingsJotai, (optic) => optic.prop('streaming'));
 const localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local')) as unknown as WritableAtom<LocalConfig, [SetStateAction<LocalConfig>], void>;
@@ -56,7 +48,14 @@ export default function Settings () {
     const [streaming, setStreaming] = useAtom(streamingJotai);
     const [ncmProfile, setNCMProfile] = useAtom(ncmProfileJotai);
     const [ncmAPI, setNcmAPI] = useAtom(ncmApiJotai);
-    const barOpen = useAtomValue(nowPlayingBarJotai);
+    const intl = useIntl();
+
+    const autoScanOptions = [
+        { value: 'startup', label: intl.formatMessage({ defaultMessage: 'Each startup'}) } as const,
+        { value: 'daily', label: intl.formatMessage({ defaultMessage: 'Daily'}) } as const,
+        { value: 'weekly', label: intl.formatMessage({ defaultMessage: 'Weekly'}) } as const,
+        { value: 'never', label: intl.formatMessage({ defaultMessage: 'Never'}) } as const
+    ];
 
     useEffect(() => {
         if (!qr) {
@@ -155,7 +154,7 @@ export default function Settings () {
                         <span className='grow-1'>
                             <FormattedMessage defaultMessage='Use streaming (Experimental)' />
                         </span>
-                        <Tooltip content='Streaming does not currently support adjusting playback progress' placement='left' tooltipClassName='w-60'>
+                        <Tooltip content={intl.formatMessage({ defaultMessage: 'Streaming does not currently support adjusting playback progress'})} placement='left' tooltipClassName='w-60'>
                             <Switch checked={streaming} onChange={setStreaming} />
                         </Tooltip>
                     </div>
@@ -325,7 +324,9 @@ export default function Settings () {
                                             <div className='flex mt-2 gap-2 items-center'>
                                                 <span onClick={() => {
                                                     setQr(true);
-                                                } } className='color-fg-pri grow-1 font-size-sm cursor-pointer'>Use QRCode</span>
+                                                } } className='color-fg-pri grow-1 font-size-sm cursor-pointer'>
+                                                    <FormattedMessage defaultMessage='Use QRCode' />
+                                                </span>
                                                 <Button size='lg' onClick={() => {
                                                     setNcmAuthModalOpen(false);
                                                 } }>

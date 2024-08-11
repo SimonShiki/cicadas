@@ -15,55 +15,67 @@ interface SongItemProps {
     onClick (song: AbstractSong<string>): void;
     hideBg?: boolean;
     onSelect? (checked: boolean): void;
+    onAddToLib? (song: AbstractSong<string>): void;
 }
 
 export default function SongItem (props: SongItemProps) {
     const [songlists, setSonglists] = useAtom(songlistsJotai);
     const showContextMenu = useCallback(async () => {
-        const menu = await Menu.new({
-            items: [
-                await MenuItem.new({
-                    text: 'Play',
+        const items = [
+            await MenuItem.new({
+                text: 'Play',
+                action: () => {
+                    player.setCurrentSong(props.song);
+                }
+            }),
+            await MenuItem.new({
+                text: 'Add to playlist',
+                action: () => {
+                    props.onClick(props.song);
+                }
+            }),
+            await PredefinedMenuItem.new({
+                item: 'Separator'
+            }),
+            await Submenu.new({
+                text: 'Add to',
+                items: await Promise.all(songlists.map((songlist, index) => (MenuItem.new({
+                    text: songlist.name,
                     action: () => {
-                        player.setCurrentSong(props.song);
+                        const newSonglist = {
+                            ...songlist,
+                            songs: [...songlist.songs, props.song]
+                        };
+                        const newSonglists = [...songlists];
+                        newSonglists[index] = newSonglist;
+                        setSonglists(newSonglists);
                     }
-                }),
+                }))))
+            })
+        ];
+        if (props.onAddToLib) {
+            items.push(
                 await MenuItem.new({
-                    text: 'Add to playlist',
+                    text: 'Add to library',
                     action: () => {
-                        props.onClick(props.song);
+                        props.onAddToLib!(props.song);
                     }
-                }),
-                await PredefinedMenuItem.new({
-                    item: 'Separator'
-                }),
-                await Submenu.new({
-                    text: 'Add to',
-                    items: await Promise.all(songlists.map((songlist, index) => (MenuItem.new({
-                        text: songlist.name,
-                        action: () => {
-                            const newSonglist = {
-                                ...songlist,
-                                songs: [...songlist.songs, props.song]
-                            };
-                            const newSonglists = [...songlists];
-                            newSonglists[index] = newSonglist;
-                            setSonglists(newSonglists);
-                        }
-                    }))))
-                }),
-                await IconMenuItem.new({
-                    icon: NativeIcon.Remove,
-                    text: 'Remove'
-                }),
-                await IconMenuItem.new({
-                    icon: NativeIcon.Info,
-                    text: 'Info'
                 })
-            ]
-        });
+            );
+        }
+        items.push(
+            await IconMenuItem.new({
+                icon: NativeIcon.Remove,
+                text: 'Remove'
+            }),
+            await IconMenuItem.new({
+                icon: NativeIcon.Info,
+                text: 'Info'
+            })
+        );
+        const menu = await Menu.new({items});
         menu.popup();
-    }, [songlists]);
+    }, [songlists, props.onAddToLib]);
 
     return (
         <Card onContextMenu={showContextMenu} onDoubleClick={() => {

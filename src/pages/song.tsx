@@ -15,14 +15,6 @@ import { libraryJotai, songlistsJotai } from '../jotais/library';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Menu, MenuItem, PredefinedMenuItem, Submenu } from '@tauri-apps/api/menu';
 
-const sortOptions = [
-    { value: 'default', label: 'Default' } as const,
-    { value: 'a-z', label: 'A - Z' } as const,
-    { value: 'z-a', label: 'Z - A' } as const,
-    { value: 'time_desc', label: 'Time (Reversed)' } as const,
-    { value: 'time_asc', label: 'Time' } as const
-];
-
 export default function SongPage () {
     const _list = useAtomValue(libraryJotai);
     const [list, setList] = useState(_list);
@@ -34,6 +26,13 @@ export default function SongPage () {
     const [selected, setSelected] = useState<(number | string)[]>([]);
     const [keyword, setKeyword] = useState('');
     const [sortBy, setSortBy] = useState<SortOptions>('a-z');
+    const sortOptions = [
+        { value: 'default', label: intl.formatMessage({ defaultMessage: 'Default' }) } as const,
+        { value: 'a-z', label: intl.formatMessage({ defaultMessage: 'A - Z' }) } as const,
+        { value: 'z-a', label: intl.formatMessage({ defaultMessage: 'Z - A' }) } as const,
+        { value: 'time_desc', label: intl.formatMessage({ defaultMessage: 'Time (Reversed)' }) } as const,
+        { value: 'time_asc', label: intl.formatMessage({ defaultMessage: 'Time' }) } as const
+    ];
     const handleClickSong = useCallback((song: Song<string>) => {
         player.clearPlaylist();
         player.addToPlaylist(...list);

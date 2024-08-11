@@ -1,14 +1,12 @@
 import { atom } from 'jotai';
 import { scannedJotai, Song, storagesJotai } from './storage';
 import sharedStore from './shared-store';
-import { atomWithStorage } from 'jotai/utils';
 import { backendStorage } from '../utils/local-utitity';
 
 export const libraryJotai = atom<Song<string>[]>([]);
 sharedStore.sub(scannedJotai, () => {
     const allScanned = sharedStore.get(scannedJotai);
-    const library = sharedStore.get(libraryJotai);
-    if (!allScanned || library.length > 0) return;
+    if (!allScanned) return;
 
     const list: Song<string>[] = [];
     const storages = sharedStore.get(storagesJotai);

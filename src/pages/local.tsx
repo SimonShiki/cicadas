@@ -18,14 +18,6 @@ const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'
 const songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));
 const scannedJotai = focusAtom(localStorageJotai, (optic) => optic.prop('scanned'));
 
-const sortOptions = [
-    {value: 'default', label: 'Default'} as const,
-    {value: 'a-z', label: 'A - Z'} as const,
-    { value: 'z-a', label: 'Z - A' } as const,
-    { value: 'time_desc', label: 'Time (Reversed)' } as const,
-    { value: 'time_asc', label: 'Time' } as const
-];
-
 export default function Local () {
     const _list = useAtomValue(songlistJotai);
     const [list, setList] = useState(_list);
@@ -34,6 +26,13 @@ export default function Local () {
     const [keyword, setKeyword] = useState('');
     const [sortBy, setSortBy] = useState<SortOptions>('a-z');
     const intl = useIntl();
+    const sortOptions = [
+        { value: 'default', label: intl.formatMessage({ defaultMessage: 'Default'}) } as const,
+        { value: 'a-z', label: intl.formatMessage({ defaultMessage: 'A - Z' }) } as const,
+        { value: 'z-a', label: intl.formatMessage({ defaultMessage: 'Z - A' }) } as const,
+        { value: 'time_desc', label: intl.formatMessage({ defaultMessage: 'Time (Reversed)' }) } as const,
+        { value: 'time_asc', label: intl.formatMessage({ defaultMessage: 'Time' }) } as const
+    ];
     const handleClickSong = useCallback((song: Song<'local'>) => {
         player.clearPlaylist();
         player.addToPlaylist(...list);
