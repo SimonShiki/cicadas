@@ -6,7 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { settingsJotai } from '../jotais/settings';
 import { transformChunk } from './chunk-transformer';
 import { focusAtom } from 'jotai-optics';
-import { WritableAtom } from 'jotai';
+import { atom, WritableAtom } from 'jotai';
 import { SetStateAction } from 'react';
 
 type MediaControlPayload = 'play' | 'pause' | 'toggle' | 'next' | 'previous';
@@ -153,12 +153,19 @@ function setupEventListeners () {
         sharedStore.set(durationJotai, e.payload);
     });
 
-    let prevsongId: string | number = -1;
+    let prevSongId: string | number = -1;
     sharedStore.sub(currentSongJotai, () => {
         const currentSong = sharedStore.get(currentSongJotai);
-        if (currentSong && prevsongId !== currentSong.id) {
+        const replayCurrentSong = sharedStore.get(replayCurrentSongAtom);
+
+        if (!currentSong) return;
+
+        if (prevSongId !== currentSong.id || replayCurrentSong) {
             playCurrentSong();
-            prevsongId = currentSong.id;
+            prevSongId = currentSong.id;
+            if (replayCurrentSong) {
+                sharedStore.set(replayCurrentSongAtom, false);
+            }
         }
     });
 
@@ -210,6 +217,8 @@ function factorToVolume (amplitude: number) {
     
 }
 
+const replayCurrentSongAtom = atom(false);
+
 async function updateProgress () {
     try {
         const progress = await invoke<number>('get_playback_progress');
@@ -228,7 +237,7 @@ async function checkSongProgress () {
         sharedStore.set(backendPlayingJotai, false);
         switch (playmode) {
         case 'single-recycle':
-            await playCurrentSong();
+            sharedStore.set(replayCurrentSongAtom, true);
             break;
         case 'single':
             sharedStore.set(playingJotai, false);
@@ -259,6 +268,10 @@ export function shuffleNewSongs (playlist: Song<string>[], newSongsCount: number
 }
 
 export function setCurrentSong (song: Song<string>) {
+    const currentSong = sharedStore.get(currentSongJotai);
+    if (currentSong && currentSong.id === song.id) {
+        sharedStore.set(replayCurrentSongAtom, true);
+    }
     sharedStore.set(currentSongJotai, song);
 }
 
@@ -300,7 +313,7 @@ export function next () {
     const nextIndex = getNextIndex(currentIndex, playlist.length);
 
     if (nextIndex !== -1) {
-        sharedStore.set(currentSongJotai, playlist[nextIndex]);
+        setCurrentSong(playlist[nextIndex]);
         if (playMode !== 'single') {
             sharedStore.set(playingJotai, true);
         }

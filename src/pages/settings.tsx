@@ -154,7 +154,7 @@ export default function Settings () {
                         <span className='grow-1'>
                             <FormattedMessage defaultMessage='Use streaming (Experimental)' />
                         </span>
-                        <Tooltip content={intl.formatMessage({ defaultMessage: 'Streaming does not currently support adjusting playback progress'})} placement='left' tooltipClassName='w-60'>
+                        <Tooltip content={intl.formatMessage({ defaultMessage: 'Streaming does not currently support adjusting playback progress'})} placement='left' tooltipClassName='min-w-50'>
                             <Switch checked={streaming} onChange={setStreaming} />
                         </Tooltip>
                     </div>

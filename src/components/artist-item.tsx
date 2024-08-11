@@ -6,7 +6,7 @@ interface ArtistItemProps {
     onClick (artist: Artist): void;
 }
 
-export default function ArtistItem({ artist, onClick }: ArtistItemProps) {
+export default function ArtistItem ({ artist, onClick }: ArtistItemProps) {
     return (
         <div className='flex flex-col gap-2 w-36 h-48 active:scale-95 border-(1 solid transparent) hover:border-outline-sec bg-black bg-op-0 hover:bg-op-5 rounded-lg p-1.5 transition-all' onClick={() => {
             onClick(artist);
