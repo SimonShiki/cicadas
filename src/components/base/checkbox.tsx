@@ -30,7 +30,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox (
                     disabled={disabled}
                     ref={ref}
                 />
-                <div className={`w-5 h-5 flex items-center justify-center border-(1 solid) rounded transition-all duration-200 ease-in-out
+                <div className={`w-4 h-4 flex items-center justify-center border-(1 solid) rounded transition-all duration-150 ease-in-out
                         ${checked
             ? 'bg-fg-pri border-fg-pri dark:bg-fg-dark-pri dark:border-fg-dark-pri'
             : 'bg-white border-outline-pri dark:bg-bg-dark-pri dark:border-outline-dark-pri'}
@@ -38,7 +38,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox (
             ? 'border-outline-ter dark:border-outline-dark-ter'
             : 'hover:border-fg-pri dark:hover:border-fg-dark-pri'}`}>
                     <svg
-                        className={`w-3 h-3 text-white dark:text-bg-dark-pri fill-current transition-opacity duration-200 ease-in-out
+                        className={`w-2 h-2 text-white dark:text-bg-dark-pri fill-current transition-opacity duration-200 ease-in-out
                         ${checked ? 'opacity-100' : 'opacity-0'}`}
                         viewBox='0 0 20 20'
                     >

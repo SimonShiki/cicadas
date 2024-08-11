@@ -3,7 +3,7 @@ import { scannedJotai, Song } from '../jotais/storage';
 import Spinner from '../components/base/spinner';
 import { Virtuoso } from 'react-virtuoso';
 import { Songlist, songlistsJotai } from '../jotais/library';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import SongItem from '../components/song-item';
 import * as player from '../utils/player';
 import { FormattedMessage, useIntl } from 'react-intl';
@@ -11,13 +11,45 @@ import SonglistItem from '../components/songlist-item';
 import Button from '../components/base/button';
 import Tooltip from '../components/base/tooltip';
 import Input from '../components/base/input';
+import { SortOptions, sortSongList } from '../utils/sort';
+import Select from '../components/base/select';
+
+const sortOptions = [
+    { value: 'default', label: 'Default' } as const,
+    { value: 'a-z', label: 'A - Z' } as const,
+    { value: 'z-a', label: 'Z - A' } as const,
+    { value: 'time_desc', label: 'Time (Reversed)' } as const,
+    { value: 'time_asc', label: 'Time' } as const
+];
 
 export default function SonglistPage () {
     const scanned = useAtomValue(scannedJotai);
     const intl = useIntl();
     const [songlists, setSonglists] = useAtom(songlistsJotai);
     const [songlistName, setSonglistName] = useState('');
+    const [_currentSonglist, _setCurrentSonglist] = useState<Songlist | null>(null);
     const [currentSonglist, setCurrentSonglist] = useState<Songlist | null>(null);
+    const [sortBy, setSortBy] = useState<SortOptions>('a-z');
+    useEffect(() => {
+        if (_currentSonglist === null) {
+            setCurrentSonglist(null);
+            return;
+        }
+        let ir: Song<string>[] = _currentSonglist.songs;
+        ir = sortSongList(ir, sortBy);
+        setCurrentSonglist({
+            ..._currentSonglist,
+            ...{songs: ir}
+        });
+    }, [_currentSonglist, sortBy]);
+    const handleRandomPlay = useCallback(() => {
+        if (!currentSonglist) return;
+        const newList = [...currentSonglist.songs];
+        player.clearPlaylist();
+        player.shuffleNewSongs(newList, newList.length);
+        player.addToPlaylist(...newList);
+        player.setCurrentSong(newList[0]);
+    }, [currentSonglist]);
     const handleClickSong = useCallback((song: Song<string>) => {
         if (!currentSonglist) return;
         player.clearPlaylist();
@@ -96,7 +128,7 @@ export default function SonglistPage () {
                                         onDelete={handleDeleteSonglist}
                                         onPlayAll={handleClickSonglist}
                                         onClick={(i: number) => {
-                                            setCurrentSonglist(songlists[i]);
+                                            _setCurrentSonglist(songlists[i]);
                                         }}
                                     />
                                 );
@@ -106,16 +138,25 @@ export default function SonglistPage () {
                     <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${currentSonglist ? 'translate-x-0' : 'translate-x-full'}`}>
                         {currentSonglist && (
                             <div className='flex flex-col h-full'>
-                                <div className='flex items-center gap-4 px-4'>
+                                <div className='flex items-center gap-4 px-4 py-2'>
                                     <Button
                                         size='sm'
                                         className='flex items-center'
-                                        onClick={() => setCurrentSonglist(null)}
+                                        onClick={() => _setCurrentSonglist(null)}
                                     >
                                         <span className='i-fluent:chevron-left-16-regular' />
                                         <FormattedMessage defaultMessage='Back' />
                                     </Button>
-                                    <h2 className='text-xl font-semibold'>{currentSonglist.name}</h2>
+                                    <span className='text-xl font-semibold'>{currentSonglist.name}</span>
+                                    <Button onClick={handleRandomPlay} variant='primary' className='mr-auto flex flex-row gap-2 items-center'><span className='i-fluent:arrow-shuffle-20-regular w-5 h-5' />
+                                        <FormattedMessage defaultMessage='Random' />
+                                    </Button>
+                                    <span className='color-text-pri font-size-sm'>
+                                        <FormattedMessage defaultMessage='Sort By:' />
+                                    </span>
+                                    <Select position='left' options={sortOptions} onChange={option => {
+                                        setSortBy(option);
+                                    }} value={sortBy} />
                                 </div>
                                 <Virtuoso
                                     className='flex-1'

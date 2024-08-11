@@ -32,6 +32,7 @@ const ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.pr
 const ncmCookieJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('cookie'));
 const ncmLoggedInJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('loggedIn'));
 const ncmApiJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('api'));
+const ncmProfileJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('profile'));
 const localFoldersJotai = focusAtom(localStorageConfigJotai, (optic) => optic.prop('folders'));
 const localAutoScanJotai = focusAtom(localStorageConfigJotai, (optic) => optic.prop('autoScanBehavior'));
 const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
@@ -53,6 +54,7 @@ export default function Settings () {
     const setNCMCookie = useSetAtom(ncmCookieJotai);
     const [ncmLoggedIn, setNCMloggedIn] = useAtom(ncmLoggedInJotai);
     const [streaming, setStreaming] = useAtom(streamingJotai);
+    const [ncmProfile, setNCMProfile] = useAtom(ncmProfileJotai);
     const [ncmAPI, setNcmAPI] = useAtom(ncmApiJotai);
     const barOpen = useAtomValue(nowPlayingBarJotai);
 
@@ -267,9 +269,16 @@ export default function Settings () {
                         <span className='grow-1'>
                             <FormattedMessage defaultMessage='163 Account' />
                         </span>
+                        {ncmProfile && (
+                            <div className='flex items-center gap-2'>
+                                <img src={ncmProfile.avatarUrl} draggable={false} className="w-6 h-6 aspect-square rounded-full" />
+                                <span className='font-size-sm'>{ncmProfile.nickname}</span>
+                            </div>
+                        )}
                         <Button onClick={() => {
                             if (ncmLoggedIn) {
                                 setNCMCookie(undefined);
+                                setNCMProfile(undefined);
                                 setNCMloggedIn(false);
                             } else {
                                 setNcmAuthModalOpen(true);

@@ -127,6 +127,7 @@ export default function NowPlaying () {
                                     </div>
                                 )}
                                 className='flex w-5 h-5'
+                                placement='top-right'
                                 trigger='click'
                             >
                                 <span className='i-fluent:navigation-play-20-regular w-5 h-5 cursor-pointer' />

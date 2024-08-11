@@ -1,9 +1,9 @@
 import { focusAtom } from 'jotai-optics';
 import { storagesConfigJotai } from '../jotais/settings';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, WritableAtom } from 'jotai';
 import { NCMConfig, NCMSonglist } from '../storages/ncm';
 import Input from '../components/base/input';
-import { useCallback, useEffect, useState } from 'react';
+import { SetStateAction, useCallback, useEffect, useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { nowPlayingBarJotai } from '../jotais/play';
 import { storagesJotai, type Song as AbstractSong } from '../jotais/storage';
@@ -20,8 +20,9 @@ interface NCMProfile {
     avatarUrl: string;
 }
 
-const ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm'));
+const ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm')) as unknown as WritableAtom<NCMConfig, [SetStateAction<NCMConfig>], void>;
 const ncmStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('ncm'));
+const profileJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('profile'));
 
 export default function NCM () {
     const ncmConfig = useAtomValue(ncmStorageConfigJotai) as NCMConfig;
@@ -29,7 +30,7 @@ export default function NCM () {
     const barOpen = useAtomValue(nowPlayingBarJotai);
 
     const [songlist, setSonglist] = useState<NCMSonglist[]>([]);
-    const [profile, setProfile] = useState<NCMProfile | null>(null);
+    const profile = useAtomValue(profileJotai);
     const [searchText, setSearchText] = useState('');
     const [searchResult, setSearchResult] = useState<AbstractSong<'ncm'>[]>([]);
     const [hasMore, setHasMore] = useState(false);
@@ -46,9 +47,6 @@ export default function NCM () {
     useEffect(() => {
         if (ncmConfig.loggedIn) {
             ncmInstance.getRemoteSonglist().then(setSonglist);
-            ncmInstance.getProfile().then(setProfile);
-        } else {
-            setProfile(null);
         }
     }, [ncmConfig, ncmInstance]);
 

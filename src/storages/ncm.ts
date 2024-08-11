@@ -219,12 +219,53 @@ interface NCMSonglistTrack {
     publishTime: number;
 }
 
+interface NCMProfile {
+    userId: number;
+    userType: number;
+    nickname: string;
+    avatarImgId: number;
+    avatarUrl: string;
+    backgroundImgId: number;
+    backgroundUrl: string;
+    signature: string;
+    createTime: number;
+    userName: string;
+    accountType: number;
+    shortUserName: string;
+    birthday: number;
+    authority: number;
+    gender: number;
+    accountStatus: number;
+    province: number;
+    city: number;
+    authStatus: number;
+    description: string | null;
+    detailDescription: string | null;
+    defaultAvatar: boolean;
+    expertTags: string[] | null;
+    experts: Record<string, unknown> | null;
+    djStatus: number;
+    locationStatus: number;
+    vipType: number;
+    followed: boolean;
+    mutual: boolean;
+    authenticated: boolean;
+    lastLoginTime: number;
+    lastLoginIP: string;
+    remarkName: string | null;
+    viptypeVersion: number;
+    authenticationTypes: number;
+    avatarDetail: null;
+    anchor: boolean;
+}
+
 type NCMQuality = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires' | 'jyeffect' | 'sky' | 'jymaster';
 
 export interface NCMConfig extends StorageConfig<'ncm'> {
     cookie?: string;
     loggedIn?: boolean;
     uid?: number;
+    profile?: NCMProfile,
     api: string;
     syncSonglist: boolean;
     defaultQuality: NCMQuality;
@@ -375,8 +416,12 @@ export class NCM implements AbstractStorage {
 
     async getProfile () {
         if (!this.config.loggedIn) throw 'not logged in';
+        if (this.config.profile) return this.config.profile;
+
         const res = await fetch(`${this.config.api}user/account?cookie=${this.config.cookie}`);
         const { profile } = await res.json();
+        const profileJotai = focusAtom(this.ncmStorageConfigJotai, (optic) => optic.prop('profile'));
+        sharedStore.set(profileJotai, profile);
         return profile;
     }
 
