@@ -185,7 +185,7 @@ function setupEventListeners () {
         const playing = sharedStore.get(playingJotai);
         if (playing) {
             const intervalId = setInterval(async () => {
-                if (!sharedStore.get(playingJotai)) {
+                if (!sharedStore.get(playingJotai) || !sharedStore.get(backendPlayingJotai)) {
                     clearInterval(intervalId);
                 } else {
                     await updateProgress();
