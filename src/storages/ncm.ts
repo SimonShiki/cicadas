@@ -335,7 +335,6 @@ export class NCM implements AbstractStorage {
     }
 
     private get config () {
-        console.log(sharedStore.get(this.ncmStorageConfigJotai));
         return (sharedStore.get(this.ncmStorageConfigJotai) ?? defaultConfig) as NCMConfig;
     }
 

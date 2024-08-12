@@ -271,9 +271,6 @@ pub async fn play_local_file(app: tauri::AppHandle, audio_state: State<'_, Audio
     let sink = Sink::try_new(&audio_state.stream_handle)
         .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
 
-    // Report the actual duration
-    let _ = app.emit("update_duration", source.total_duration().unwrap().as_millis());
-
     sink.append(source);
 
     *sink_guard = Some(sink);

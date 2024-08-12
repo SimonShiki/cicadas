@@ -156,7 +156,6 @@ function setupEventListeners () {
     let prevSongId: string | number = -1;
     sharedStore.sub(currentSongJotai, () => {
         const currentSong = sharedStore.get(currentSongJotai);
-        const replayCurrentSong = sharedStore.get(replayCurrentSongAtom);
 
         if (!currentSong) return;
 
@@ -164,7 +163,7 @@ function setupEventListeners () {
             playCurrentSong();
             prevSongId = currentSong.id;
             if (replayCurrentSong) {
-                sharedStore.set(replayCurrentSongAtom, false);
+                replayCurrentSong = false;
             }
         }
     });
@@ -217,7 +216,7 @@ function factorToVolume (amplitude: number) {
     
 }
 
-const replayCurrentSongAtom = atom(false);
+let replayCurrentSong = false;
 
 async function updateProgress () {
     try {
@@ -233,11 +232,12 @@ async function checkSongProgress () {
     const playmode = sharedStore.get(playModeJotai);
     const progress = sharedStore.get(progressJotai);
 
-    if (playing && song && ((song.duration ?? Infinity) / 1000) - progress <= 0.01) {
+    if (playing && song && ((song.duration ?? Infinity) / 1000) - progress <= 0.1) {
         sharedStore.set(backendPlayingJotai, false);
         switch (playmode) {
         case 'single-recycle':
-            sharedStore.set(replayCurrentSongAtom, true);
+            replayCurrentSong = true;
+            playCurrentSong();
             break;
         case 'single':
             sharedStore.set(playingJotai, false);
@@ -270,7 +270,7 @@ export function shuffleNewSongs (playlist: Song<string>[], newSongsCount: number
 export function setCurrentSong (song: Song<string>) {
     const currentSong = sharedStore.get(currentSongJotai);
     if (currentSong && currentSong.id === song.id) {
-        sharedStore.set(replayCurrentSongAtom, true);
+        replayCurrentSong = true;
     }
     sharedStore.set(currentSongJotai, song);
 }
