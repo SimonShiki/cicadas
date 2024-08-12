@@ -1,12 +1,12 @@
 import { listen } from '@tauri-apps/api/event';
-import { nowPlayingJotai, playlistJotai, beginTimeJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai, streamingJotai, bufferingJotai } from '../jotais/play';
+import { nowPlayingJotai, playlistJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai, streamingJotai, bufferingJotai } from '../jotais/play';
 import sharedStore from '../jotais/shared-store';
 import { Song, storagesJotai } from '../jotais/storage';
 import { invoke } from '@tauri-apps/api/core';
 import { settingsJotai } from '../jotais/settings';
 import { transformChunk } from './chunk-transformer';
 import { focusAtom } from 'jotai-optics';
-import { atom, WritableAtom } from 'jotai';
+import { WritableAtom } from 'jotai';
 import { SetStateAction } from 'react';
 
 type MediaControlPayload = 'play' | 'pause' | 'toggle' | 'next' | 'previous';
@@ -21,7 +21,6 @@ async function initializeMediaControls () {
             const progress = await invoke<number>('get_playback_progress');
             sharedStore.set(progressJotai, progress);
             sharedStore.set(backendPlayingJotai, true);
-            sharedStore.set(beginTimeJotai, Date.now() - progress * 1000);
         }
         const volume = await invoke<number>('get_volume');
         sharedStore.set(volumeJotai, factorToVolume(volume));
@@ -54,12 +53,11 @@ async function playCurrentSong () {
     const volume = sharedStore.get(volumeJotai);
     if (!currentSong) return;
     pause();
-    sharedStore.set(progressJotai, 0);
     await updateMediaMetadata(currentSong);
+    sharedStore.set(backendPlayingJotai, false);
+    sharedStore.set(progressJotai, 0);
     if (currentSong.storage === 'local') {
         await invoke('play_local_file', { filePath: currentSong.path });
-        sharedStore.set(beginTimeJotai, Date.now());
-        play();
         await invoke('set_volume', { volume: volumeToFactor(volume) });
         sharedStore.set(backendPlayingJotai, true);
     } else {
@@ -93,7 +91,6 @@ async function playCurrentSong () {
                     if (!initChunk) {
                         initChunk = true;
                         sharedStore.set(bufferingJotai, false);
-                        play();
                     }
                 }
             } catch (e) {
@@ -116,12 +113,12 @@ async function playCurrentSong () {
                 return;
             }
             await invoke('play_arraybuffer', { buffer: await transformChunk(buffer) });
-            play();
             await invoke('set_volume', { volume: volumeToFactor(volume) });
             sharedStore.set(backendPlayingJotai, true);
             sharedStore.set(bufferingJotai, false);
         }
     }
+    play();
 }
 
 function setupEventListeners () {
@@ -233,13 +230,12 @@ async function checkSongProgress () {
     const progress = sharedStore.get(progressJotai);
 
     if (playing && song && ((song.duration ?? Infinity) / 1000) - progress <= 0.1) {
-        sharedStore.set(backendPlayingJotai, false);
         switch (playmode) {
         case 'single-recycle':
             playCurrentSong();
             break;
         case 'single':
-            sharedStore.set(playingJotai, false);
+            pause();
             break;
         default:
             await next();
@@ -277,7 +273,7 @@ export function setCurrentSong (song: Song<string>) {
 export function clearPlaylist () {
     sharedStore.set(playlistJotai, []);
     sharedStore.set(currentSongJotai, undefined);
-    sharedStore.set(playingJotai, false);
+    pause();
     sharedStore.set(progressJotai, 0);
 }
 
@@ -297,7 +293,6 @@ export async function setProgress (progress: number) {
     try {
         await invoke('set_playback_progress', { progress });
         sharedStore.set(progressJotai, progress);
-        sharedStore.set(beginTimeJotai, Date.now() - progress * 1000);
     } catch (e) {
         console.error('Failed to set playback progress:', e);
     }
@@ -313,11 +308,8 @@ export function next () {
 
     if (nextIndex !== -1) {
         setCurrentSong(playlist[nextIndex]);
-        if (playMode !== 'single') {
-            sharedStore.set(playingJotai, true);
-        }
     } else if (playMode === 'list') {
-        sharedStore.set(playingJotai, false);
+        pause();
     }
 }
 
