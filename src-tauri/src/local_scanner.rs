@@ -1,11 +1,14 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use lofty::{file::{AudioFile, TaggedFileExt}, probe::Probe, tag::{Accessor, ItemKey}};
 use walkdir::WalkDir;
 use serde::{Serialize, Deserialize};
 use base64::{Engine as _, engine::general_purpose};
 use std::fs;
+use std::sync::mpsc;
+use std::thread;
+use std::sync::{Arc, Mutex};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Song {
     id: String,
     name: String,
@@ -21,15 +24,63 @@ pub struct Song {
 
 #[tauri::command]
 pub fn scan_folder(path: &str) -> Result<Vec<Song>, String> {
-    let mut songs = Vec::new();
+    let (tx, rx) = mpsc::channel();
+    let path_clone = path.to_string();
 
-    for entry in WalkDir::new(path).follow_links(true).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            if let Some(song) = process_file(entry.path()) {
-                songs.push(song);
+    let handle = thread::spawn(move || {
+        let (file_tx, file_rx) = mpsc::channel::<PathBuf>();
+        let file_rx = Arc::new(Mutex::new(file_rx));
+
+        // Spawn multiple worker threads
+        let num_threads = num_cpus::get();
+        let thread_handles: Vec<_> = (0..num_threads).map(|_| {
+            let file_rx = Arc::clone(&file_rx);
+            let tx = tx.clone();
+            thread::spawn(move || {
+                loop {
+                    let path = {
+                        let rx = file_rx.lock().unwrap();
+                        rx.recv()
+                    };
+                    match path {
+                        Ok(path) => {
+                            if let Some(song) = process_file(&path) {
+                                tx.send(song).unwrap();
+                            }
+                        },
+                        Err(_) => break, // Channel closed, exit the loop
+                    }
+                }
+            })
+        }).collect();
+
+        // Collect files
+        for entry in WalkDir::new(&path_clone).follow_links(true).into_iter().filter_map(|e| e.ok()) {
+            if entry.file_type().is_file() {
+                file_tx.send(entry.path().to_path_buf()).unwrap();
             }
         }
+
+        // Close the file channel
+        drop(file_tx);
+
+        // Wait for all worker threads to complete
+        for handle in thread_handles {
+            handle.join().unwrap();
+        }
+
+        // Close the song channel
+        drop(tx);
+    });
+
+    // Collect all songs
+    let mut songs = Vec::new();
+    for song in rx {
+        songs.push(song);
     }
+
+    // Wait for the main thread to finish
+    handle.join().unwrap();
 
     Ok(songs)
 }
@@ -61,7 +112,6 @@ fn process_file(path: &Path) -> Option<Song> {
         t.get_string(&ItemKey::Lyrics).map(|s| s.to_string())
     });
 
-    
     let cover = tag.and_then(|t| t.pictures().first()).map(|p| {
         let b64 = general_purpose::STANDARD.encode(&p.data());
         format!("data:{};base64,{}", p.mime_type().unwrap().as_str(), b64)
@@ -73,7 +123,7 @@ fn process_file(path: &Path) -> Option<Song> {
     let mtime = metadata.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
 
     Some(Song {
-        id: format!("local-{name}-{album}-{artist}", album = album.clone().unwrap(), artist = artist.clone().unwrap()),
+        id: format!("local-{name}-{album}-{artist}", album = album.clone().unwrap_or_default(), artist = artist.clone().unwrap_or_default()),
         name,
         artist,
         album,
