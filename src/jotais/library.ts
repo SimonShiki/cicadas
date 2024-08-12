@@ -83,13 +83,36 @@ export interface Songlist {
     songs: Song<string>[];
 }
 
+interface CachedSonglist {
+    name: string;
+    songs: (string | number)[];
+}
+
 export const songlistsJotai = atom<Songlist[]>([]);
-backendStorage.get('songlists').then((songlists: Songlist[] | undefined) => {
-    if (!songlists) return;
-    sharedStore.set(songlistsJotai, songlists);
+sharedStore.sub(libraryJotai, async () => {
+    const songs = sharedStore.get(libraryJotai);
+    if (!songs.length) return;
+
+    const cachedSonglists: CachedSonglist[] | undefined = await backendStorage.get('songlists');
+    if (!cachedSonglists) return;
+    const mappedSonglist : Songlist[] = [];
+    for (const {name, songs: ids} of cachedSonglists) {
+        mappedSonglist.push({
+            name,
+            songs: ids.map(id => songs.find(song => song.id === id)).filter(song => !!song)
+        });
+    }
+    sharedStore.set(songlistsJotai, mappedSonglist);
 });
 
 sharedStore.sub(songlistsJotai, () => {
     const songlists = sharedStore.get(songlistsJotai);
-    backendStorage.set('songlists', songlists);
+    const cachedSonglists: CachedSonglist[] = [];
+    for (const {name, songs} of songlists) {
+        cachedSonglists.push({
+            name,
+            songs: songs.map((song) => song.id)
+        });
+    }
+    backendStorage.set('songlists', cachedSonglists);
 });

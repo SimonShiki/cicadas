@@ -423,7 +423,7 @@ export class NCM implements AbstractStorage {
                 const res = await fetch(`${this.config.api}album?id=${song.album.id}`);
                 const { album } = await res.json();
                 return ({
-                    id: song.id,
+                    id: `ncm-${song.id}`,
                     name: song.name,
                     duration: song.duration,
                     mtime: song.album.publishTime ?? 0,

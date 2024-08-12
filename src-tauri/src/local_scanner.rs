@@ -73,7 +73,7 @@ fn process_file(path: &Path) -> Option<Song> {
     let mtime = metadata.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
 
     Some(Song {
-        id: path.to_string_lossy().into_owned(),
+        id: format!("local-{name}-{album}-{artist}", album = album.clone().unwrap(), artist = artist.clone().unwrap()),
         name,
         artist,
         album,
