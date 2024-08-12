@@ -29,6 +29,7 @@
     "fs:write-all",
     "core:path:default",
     "core:path:allow-resolve",
-    "dialog:default"
+    "dialog:default",
+    "core:window:allow-set-progress-bar"
   ]
 }

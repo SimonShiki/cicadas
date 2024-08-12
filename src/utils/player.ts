@@ -8,6 +8,8 @@ import { transformChunk } from './chunk-transformer';
 import { focusAtom } from 'jotai-optics';
 import { WritableAtom } from 'jotai';
 import { SetStateAction } from 'react';
+import { webviewWindow } from '@tauri-apps/api';
+import { ProgressBarStatus } from '@tauri-apps/api/window';
 
 type MediaControlPayload = 'play' | 'pause' | 'toggle' | 'next' | 'previous';
 type UpdateDurationPayload = number;
@@ -46,6 +48,9 @@ async function updateMediaMetadata (song: Song<string>) {
 
 async function updatePlaybackStatus (isPlaying: boolean) {
     await invoke('update_playback_status', { isPlaying });
+    webviewWindow.WebviewWindow.getCurrent().setProgressBar({
+        status: isPlaying ? ProgressBarStatus.Normal : ProgressBarStatus.Paused
+    });
 }
 
 async function playCurrentSong () {
@@ -163,6 +168,15 @@ function setupEventListeners () {
                 replayCurrentSong = false;
             }
         }
+    });
+
+    sharedStore.sub(progressJotai, () => {
+        const progress = sharedStore.get(progressJotai);
+        const currentSong = sharedStore.get(currentSongJotai);
+        if (!currentSong || !currentSong.duration) return;
+        webviewWindow.WebviewWindow.getCurrent().setProgressBar({
+            progress: Math.ceil(progress / currentSong.duration * 100000)
+        });
     });
 
     sharedStore.sub(playingJotai, async () => {
