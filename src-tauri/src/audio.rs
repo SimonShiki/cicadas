@@ -252,7 +252,7 @@ impl From<rodio::decoder::DecoderError> for AppError {
 }
 
 #[tauri::command]
-pub async fn play_local_file(app: tauri::AppHandle, audio_state: State<'_, AudioState>, file_path: String) -> Result<()> {
+pub async fn play_local_file(audio_state: State<'_, AudioState>, file_path: String) -> Result<()> {
     let path = Path::new(&file_path);
     if !path.exists() {
         return Err(AppError::FileNotFound(file_path));

@@ -236,7 +236,6 @@ async function checkSongProgress () {
         sharedStore.set(backendPlayingJotai, false);
         switch (playmode) {
         case 'single-recycle':
-            replayCurrentSong = true;
             playCurrentSong();
             break;
         case 'single':

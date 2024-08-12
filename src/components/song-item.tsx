@@ -31,7 +31,7 @@ export default function SongItem (props: SongItemProps) {
             await MenuItem.new({
                 text: 'Add to playlist',
                 action: () => {
-                    props.onClick(props.song);
+                    player.addToPlaylist(props.song);
                 }
             }),
             await PredefinedMenuItem.new({

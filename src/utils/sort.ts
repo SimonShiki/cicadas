@@ -20,8 +20,8 @@ export function sortSongList<T extends string> (list: Song<T>[], by: SortOptions
 
 export function filterSongList<T extends string> (list: Song<T>[], keyword: string) {
     return list.filter(song => (
-        song.name.includes(keyword) ||
-        song.artist?.includes(keyword) || 
-        song.album?.includes(keyword)
+        song.name.toLowerCase().includes(keyword.toLowerCase()) ||
+        song.artist?.toLowerCase().includes(keyword.toLowerCase()) || 
+        song.album?.toLowerCase().includes(keyword.toLowerCase())
     ));
 }

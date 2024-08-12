@@ -6,6 +6,7 @@ import { mergeDeep } from '../utils/merge-deep';
 import type { SetStateAction, WritableAtom } from 'jotai';
 import { backendStorage } from '../utils/local-utitity';
 import { fetchArraybuffer } from '../utils/chunk-transformer';
+import { currentSongJotai } from '../jotais/play';
 
 interface NCMSearchResult {
     id: number;
@@ -310,6 +311,16 @@ export class NCM implements AbstractStorage {
             if (!this.songlistJotai) return;
             const songlist = sharedStore.get(this.songlistJotai);
             backendStorage.set('cachedNCMSong', songlist);
+        });
+        sharedStore.sub(currentSongJotai, async () => {
+            const currentSong = sharedStore.get(currentSongJotai);
+            if (!currentSong || currentSong.storage !== 'ncm' || currentSong.lyrics) return;
+
+            const res = await fetch(`${this.config.api}lyric?id=${currentSong.id}`);
+            const {lrc: {lyric}} = await res.json();
+            
+            const lyricJotai = focusAtom(currentSongJotai as WritableAtom<Song<string>, [SetStateAction<Song<string>>], void>, (optic) => optic.prop('lyrics'));
+            sharedStore.set(lyricJotai, lyric);
         });
     }
 

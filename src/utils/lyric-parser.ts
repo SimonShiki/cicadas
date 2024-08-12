@@ -1,4 +1,4 @@
-export function parseLyrics (raw: string): ParsedLyrics | string {
+export function parseLyrics(raw: string): ParsedLyrics | string {
     const lines = raw.split('\n');
     const parsedLyrics: ParsedLyrics = { lines: [] };
     let isStandardFormat = false;
@@ -13,15 +13,15 @@ export function parseLyrics (raw: string): ParsedLyrics | string {
             continue;
         }
 
-        // Check for time-stamped lines
-        const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{2})\](.*)$/);
+        // Check for time-stamped lines (supporting both .00 and .000 formats)
+        const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)$/);
         if (match) {
             isStandardFormat = true;
-            const [, minutes, seconds, centiseconds, content] = match;
-            const time = parseInt(minutes) * 60000 + parseInt(seconds) * 1000 + parseInt(centiseconds) * 10;
+            const [, minutes, seconds, milliseconds, content] = match;
+            const time = parseInt(minutes) * 60000 + parseInt(seconds) * 1000 + parseInt(milliseconds.padEnd(3, '0'));
 
-            // Skip the empty line
-            if (content.trim() === '') {
+            // Skip empty lines or metadata lines
+            if (content.trim() === '' || content.includes(':')) {
                 continue;
             }
 

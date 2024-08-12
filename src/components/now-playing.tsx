@@ -114,7 +114,9 @@ export default function NowPlaying () {
                                             itemContent={(index) => {
                                                 const thatSong = playlist[index];
                                                 return (
-                                                    <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => player.setCurrentSong(song)}>
+                                                    <div onDoubleClickCapture={() => {
+                                                        player.setCurrentSong(thatSong);
+                                                    }} className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => player.setCurrentSong(song)}>
                                                         <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
                                                         <div className='flex flex-col *:text-truncate max-w-56'>
                                                             <span className={`color-text-pri font-size-xs font-500 ${song.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
