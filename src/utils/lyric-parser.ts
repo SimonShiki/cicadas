@@ -1,4 +1,4 @@
-export function parseLyrics(raw: string): ParsedLyrics | string {
+export function parseLyrics (raw: string): ParsedLyrics | string {
     const lines = raw.split('\n');
     const parsedLyrics: ParsedLyrics = { lines: [] };
     let isStandardFormat = false;
@@ -50,6 +50,45 @@ export function parseLyrics(raw: string): ParsedLyrics | string {
     }
 
     return parsedLyrics;
+}
+
+export function mergeLyrics (rawLyrics: string, translatedLyrics?: string | null) {
+    if (!translatedLyrics) {
+        return rawLyrics;
+    }
+
+    const rawParsed = parseLyrics(rawLyrics);
+    const translatedParsed = parseLyrics(translatedLyrics);
+
+    if (typeof rawParsed === 'string' || typeof translatedParsed === 'string') {
+        // If either parsing failed, return the raw lyrics
+        return rawLyrics;
+    }
+
+    const mergedLines: string[] = [];
+    const translatedMap = new Map(translatedParsed.lines.map(line => [line.time, line.content]));
+
+    for (const line of rawParsed.lines) {
+        const translatedContent = translatedMap.get(line.time);
+        if (translatedContent) {
+            mergedLines.push(`[${formatTime(line.time)}]${line.content}`);
+            mergedLines.push(`[${formatTime(line.time)}]${translatedContent}`);
+        } else {
+            mergedLines.push(`[${formatTime(line.time)}]${line.content}`);
+        }
+    }
+
+    // Add the [by:] line if present in either lyrics
+    const byLine = rawParsed.by ? `[by:${rawParsed.by}]` : (translatedParsed.by ? `[by:${translatedParsed.by}]` : '');
+
+    return byLine + (byLine ? '\n' : '') + mergedLines.join('\n');
+}
+
+function formatTime (ms: number) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    const milliseconds = ms % 1000;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
 }
 
 export interface ParsedLyrics {

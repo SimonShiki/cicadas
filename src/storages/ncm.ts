@@ -7,6 +7,7 @@ import type { SetStateAction, WritableAtom } from 'jotai';
 import { backendStorage } from '../utils/local-utitity';
 import { fetchArraybuffer } from '../utils/chunk-transformer';
 import { currentSongJotai } from '../jotais/play';
+import { mergeLyrics } from '../utils/lyric-parser';
 
 interface NCMSearchResult {
     id: number;
@@ -313,14 +314,17 @@ export class NCM implements AbstractStorage {
             backendStorage.set('cachedNCMSong', songlist);
         });
         sharedStore.sub(currentSongJotai, async () => {
-            const currentSong = sharedStore.get(currentSongJotai);
-            if (!currentSong || currentSong.storage !== 'ncm' || currentSong.lyrics) return;
+            try {
+                const currentSong = sharedStore.get(currentSongJotai);
+                if (!currentSong || currentSong.storage !== 'ncm' || currentSong.lyrics) return;
 
-            const res = await fetch(`${this.config.api}lyric?id=${currentSong.id}`);
-            const {lrc: {lyric}} = await res.json();
-            
-            const lyricJotai = focusAtom(currentSongJotai as WritableAtom<Song<string>, [SetStateAction<Song<string>>], void>, (optic) => optic.prop('lyrics'));
-            sharedStore.set(lyricJotai, lyric);
+                const res = await fetch(`${this.config.api}lyric?id=${currentSong.id}`);
+                const { lrc: { lyric }, tlyric: { lyric: tlyric } } = await res.json();
+                const lyricJotai = focusAtom(currentSongJotai as WritableAtom<Song<string>, [SetStateAction<Song<string>>], void>, (optic) => optic.prop('lyrics'));
+                sharedStore.set(lyricJotai, mergeLyrics(lyric, tlyric));
+            } catch (e) {
+                console.error('Error occurred while getting remote lyrics', e);
+            }
         });
     }
 
@@ -423,7 +427,7 @@ export class NCM implements AbstractStorage {
                 const res = await fetch(`${this.config.api}album?id=${song.album.id}`);
                 const { album } = await res.json();
                 return ({
-                    id: `ncm-${song.id}`,
+                    id: song.id,
                     name: song.name,
                     duration: song.duration,
                     mtime: song.album.publishTime ?? 0,
