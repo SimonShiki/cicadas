@@ -5,9 +5,10 @@ import { AbstractStorage, Song, storagesJotai } from '../jotais/storage';
 import { mergeDeep } from '../utils/merge-deep';
 import type { SetStateAction, WritableAtom } from 'jotai';
 import { backendStorage } from '../utils/local-utitity';
-import { fetchArraybuffer } from '../utils/chunk-transformer';
+import { fetchArraybuffer, fetchBuffer } from '../utils/chunk-transformer';
 import { currentSongJotai } from '../jotais/play';
 import { mergeLyrics } from '../utils/lyric-parser';
+import { cacheSong, getCachedSong } from '../utils/cache.';
 
 interface NCMSearchResult {
     id: number;
@@ -393,9 +394,9 @@ export class NCM implements AbstractStorage {
     private async getMusicURL (id: number, quality = this.config.defaultQuality) {
         const res = await fetch(`${this.config.api}song/url/v1?id=${id}&level=${quality}${this.config.cookie ? `&cookie=${this.config.cookie}` : ''}`);
         const { data } = await res.json();
-        const { url } = data[0];
-        if (!url) throw new Error(`Cannot get url for ${id}`);
-        return url as string;
+        const song = data[0];
+        if (!song.url) throw new Error(`Cannot get url for ${id}:\n ${JSON.stringify(song)}`);
+        return song.url as string;
     }
 
     async * getMusicStream (id: number, quality = this.config.defaultQuality) {
@@ -413,8 +414,11 @@ export class NCM implements AbstractStorage {
     }
 
     async getMusicBuffer (id: number, quality = this.config.defaultQuality) {
+        const cached = await getCachedSong(id);
+        if (cached) return cached;
         const url = await this.getMusicURL(id, quality);
-        const buffer = await fetchArraybuffer(url);
+        const buffer = await fetchBuffer(url);
+        cacheSong(id, buffer);
         return buffer;
     }
 

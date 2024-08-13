@@ -8,10 +8,10 @@ export const transformChunk = greenlet(
     }
 );
 
-export const fetchArraybuffer = greenlet(
+export const fetchBuffer = greenlet(
     async (url: string) => {
         const res = await fetch(url);
         const buffer = await res.arrayBuffer();
-        return buffer;
+        return Array.from(new Uint8Array(buffer));
     }
 );

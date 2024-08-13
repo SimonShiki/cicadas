@@ -64,6 +64,7 @@ async function playCurrentSong () {
     if (currentSong.storage === 'local') {
         await invoke('play_local_file', { filePath: currentSong.path });
         await invoke('set_volume', { volume: volumeToFactor(volume) });
+        sharedStore.set(bufferingJotai, false);
         sharedStore.set(backendPlayingJotai, true);
     } else {
         const storages = sharedStore.get(storagesJotai);
@@ -117,7 +118,7 @@ async function playCurrentSong () {
                 console.warn('buffer interrupted');
                 return;
             }
-            await invoke('play_arraybuffer', { buffer: await transformChunk(buffer) });
+            await invoke('play_arraybuffer', { buffer });
             await invoke('set_volume', { volume: volumeToFactor(volume) });
             sharedStore.set(backendPlayingJotai, true);
             sharedStore.set(bufferingJotai, false);
@@ -170,13 +171,18 @@ function setupEventListeners () {
         }
     });
 
+    let prevProgress: number;
     sharedStore.sub(progressJotai, () => {
         const progress = sharedStore.get(progressJotai);
         const currentSong = sharedStore.get(currentSongJotai);
         if (!currentSong || !currentSong.duration) return;
-        webviewWindow.WebviewWindow.getCurrent().setProgressBar({
-            progress: Math.ceil(progress / currentSong.duration * 100000)
-        });
+        const percentage = Math.ceil(progress / currentSong.duration * 100000);
+        if (prevProgress !== percentage) {
+            prevProgress = percentage;
+            webviewWindow.WebviewWindow.getCurrent().setProgressBar({
+                progress: percentage
+            });
+        }
     });
 
     sharedStore.sub(playingJotai, async () => {

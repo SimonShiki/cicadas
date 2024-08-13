@@ -19,7 +19,7 @@ export interface Song<From extends string> {
 export interface AbstractStorage {
     scan(): Promise<void>;
     getMusicStream?(id: string | number): AsyncGenerator<ArrayLike<unknown>, void, unknown>;
-    getMusicBuffer?(id: string | number): Promise<ArrayBuffer>;
+    getMusicBuffer?(id: string | number): Promise<number[]>;
 }
 
 export interface StorageMeta {
