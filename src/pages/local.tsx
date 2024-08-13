@@ -1,5 +1,5 @@
 import { storagesJotai } from '../jotais/storage';
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import SongItem from '../components/song-item';
 import Button from '../components/base/button';
 import Select from '../components/base/select';
@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { filterSongList, SortOptions, sortSongList } from '../utils/sort';
 import { nowPlayingBarJotai } from '../jotais/play';
 import { FormattedMessage, useIntl } from 'react-intl';
+import { sortOptionJotai } from '../jotais/settings';
 
 const localStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('local'));
 const songlistJotai = focusAtom(localStorageJotai, (optic) => optic.prop('songList'));
@@ -24,7 +25,7 @@ export default function Local () {
     const barOpen = useAtomValue(nowPlayingBarJotai);
     const scanned = useAtomValue(scannedJotai);
     const [keyword, setKeyword] = useState('');
-    const [sortBy, setSortBy] = useState<SortOptions>('a-z');
+    const [sortBy, setSortBy] = useAtom(sortOptionJotai);
     const intl = useIntl();
     const sortOptions = [
         { value: 'default', label: intl.formatMessage({ defaultMessage: 'Default'}) } as const,

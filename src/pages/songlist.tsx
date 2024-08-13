@@ -13,6 +13,7 @@ import Tooltip from '../components/base/tooltip';
 import Input from '../components/base/input';
 import { SortOptions, sortSongList } from '../utils/sort';
 import Select from '../components/base/select';
+import { sortOptionJotai } from '../jotais/settings';
 
 export default function SonglistPage () {
     const scanned = useAtomValue(scannedJotai);
@@ -21,7 +22,7 @@ export default function SonglistPage () {
     const [songlistName, setSonglistName] = useState('');
     const [_currentSonglist, _setCurrentSonglist] = useState<Songlist | null>(null);
     const [currentSonglist, setCurrentSonglist] = useState<Songlist | null>(null);
-    const [sortBy, setSortBy] = useState<SortOptions>('a-z');
+    const [sortBy, setSortBy] = useAtom(sortOptionJotai);
 
     const sortOptions = [
         { value: 'default', label: intl.formatMessage({ defaultMessage: 'Default' }) } as const,

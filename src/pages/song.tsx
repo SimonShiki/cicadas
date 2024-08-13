@@ -10,10 +10,11 @@ import { nowPlayingBarJotai } from '../jotais/play';
 import * as player from '../utils/player';
 import { scannedJotai } from '../jotais/storage';
 import type { Song } from '../jotais/storage';
-import { SortOptions, filterSongList, sortSongList } from '../utils/sort';
+import { filterSongList, sortSongList } from '../utils/sort';
 import { libraryJotai, songlistsJotai } from '../jotais/library';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Menu, MenuItem, PredefinedMenuItem, Submenu } from '@tauri-apps/api/menu';
+import { sortOptionJotai } from '../jotais/settings';
 
 export default function SongPage () {
     const _list = useAtomValue(libraryJotai);
@@ -25,7 +26,7 @@ export default function SongPage () {
     const [multiselect, setMultiselect] = useState(false);
     const [selected, setSelected] = useState<(number | string)[]>([]);
     const [keyword, setKeyword] = useState('');
-    const [sortBy, setSortBy] = useState<SortOptions>('a-z');
+    const [sortBy, setSortBy] = useAtom(sortOptionJotai);
     const sortOptions = [
         { value: 'default', label: intl.formatMessage({ defaultMessage: 'Default' }) } as const,
         { value: 'a-z', label: intl.formatMessage({ defaultMessage: 'A - Z' }) } as const,

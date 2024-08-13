@@ -5,14 +5,13 @@ import defaultCover from '../assets/default-cover.png';
 import Button from './base/button';
 import * as player from '../utils/player';
 import Progress from './base/progress';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Slider from './base/slider';
 import Tooltip from './base/tooltip';
-import { Virtuoso } from 'react-virtuoso';
 import Lyrics from './lyrics';
 import { focusAtom } from 'jotai-optics';
 import { settingsJotai } from '../jotais/settings';
-import { FormattedMessage } from 'react-intl';
+import PlaylistTooltip from './playlist-tooltip';
 
 const playModeIconMap: Record<PlayMode, string> = {
     list: 'i-fluent:arrow-repeat-all-off-20-regular',
@@ -34,29 +33,29 @@ function formatMilliseconds (ms: number): string {
 const streamingJotai = focusAtom(settingsJotai, (optic) => optic.prop('streaming'));
 
 export default function NowPlaying () {
-    const [fullscreen, setFullscreen] = useAtom(nowPlayingPageJotai);
+    const [globalFullscreen, setGlobalFullscreen] = useAtom(nowPlayingPageJotai);
+    const [localFullscreen, setLocalFullscreen] = useState(globalFullscreen);
     const [playing, setPlaying] = useAtom(playingJotai);
     const playMode = useAtomValue(playModeJotai);
     const [volume, setVolume] = useAtom(volumeJotai);
-    const playlist = useAtomValue(playlistJotai);
     const barOpen = useAtomValue(nowPlayingBarJotai);
     const song = useAtomValue(currentSongJotai);
     const progress = useAtomValue(progressJotai);
     const buffering = useAtomValue(bufferingJotai);
     const streaming = useAtomValue(streamingJotai);
-    
+
     const [isAnimating, setIsAnimating] = useState(false);
 
     const handlePlayPause = useCallback(() => {
         setPlaying(playing => !playing);
-    }, [playing, setPlaying]);
+    }, [setPlaying]);
 
-    const toggleFullscreen = useCallback(() => {
+    useEffect(() => {
         setIsAnimating(true);
-        setFullscreen(!fullscreen);
+        setLocalFullscreen(globalFullscreen);
         // Reset animation state after animation completes
         setTimeout(() => setIsAnimating(false), 300); // 300ms matches the animation duration
-    }, [fullscreen, setFullscreen]);
+    }, [globalFullscreen]);
 
     const handleChangePlayProgress = useCallback(async (value: number) => {
         const actualElapsedSecs = value * song!.duration! / 100000;
@@ -72,7 +71,9 @@ export default function NowPlaying () {
                     <Progress value={progress * 1000} infinite={buffering} max={song.duration} height='h-0.5' />
                     <div className='flex items-center m-4 justify-between'>
                         <div className='flex flex-row gap-4 w-1/3'>
-                            <img draggable={false} src={song.cover ?? defaultCover} alt={song.name} className='rounded-md w-10 h-10 cursor-pointer' onClick={toggleFullscreen} />
+                            <img draggable={false} src={song.cover ?? defaultCover} alt={song.name} className='rounded-md w-10 h-10 cursor-pointer' onClick={() => {
+                                setGlobalFullscreen(true);
+                            }} />
                             <div className='flex flex-col gap-1 lg:max-w-60 overflow-hidden *:text-truncate'>
                                 <span className='color-text-pri font-size-sm font-500'>{song.name}</span>
                                 <span className='color-text-sec font-size-xs'>{song.album}</span>
@@ -103,44 +104,14 @@ export default function NowPlaying () {
                             >
                                 <span className='i-fluent:speaker-2-20-regular w-5 h-5 cursor-pointer' />
                             </Tooltip>
-                            <Tooltip
-                                content={(
-                                    <div className='flex flex-col h-64 w-72 gap-4 p-2'>
-                                        <span className='font-(500 size-lg)'>
-                                            <FormattedMessage defaultMessage='Playlist ({total})' values={{ total: playlist.length }} />
-                                        </span>
-                                        <Virtuoso
-                                            totalCount={playlist.length}
-                                            itemContent={(index) => {
-                                                const thatSong = playlist[index];
-                                                return (
-                                                    <div onDoubleClickCapture={() => {
-                                                        player.setCurrentSong(thatSong);
-                                                    }} className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => player.setCurrentSong(song)}>
-                                                        <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
-                                                        <div className='flex flex-col *:text-truncate max-w-56'>
-                                                            <span className={`color-text-pri font-size-xs font-500 ${song.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
-                                                            <span className={`color-text-sec font-size-xs ${song.id === thatSong.id ? '!color-fg-pri' : ''}`}>{thatSong.album}</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            }}
-                                        />
-                                    </div>
-                                )}
-                                className='flex w-5 h-5'
-                                placement='top-right'
-                                trigger='click'
-                            >
-                                <span className='i-fluent:navigation-play-20-regular w-5 h-5 cursor-pointer' />
-                            </Tooltip>
+                            <PlaylistTooltip />
                         </div>
                     </div>
                 </Card>
             </div>
-            {(fullscreen || isAnimating) && (
+            {(localFullscreen || isAnimating) && (
                 <div
-                    className={`translate-z-0 absolute top-0 left-0 w-full h-full ms-bezier bg-cover animate-duration-300 ${fullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
+                    className={`translate-z-0 absolute top-0 left-0 w-full h-full ms-bezier bg-cover animate-duration-300 ${localFullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
                     style={{ backgroundImage: `url("${song.cover}")` }}
                 >
                     <div className='w-full h-full translate-z-0 backdrop-filter backdrop-blur-256 bg-black bg-op-40 flex flex-col items-center justify-center'>
@@ -186,35 +157,7 @@ export default function NowPlaying () {
                                     >
                                         <span className='i-fluent:speaker-2-20-filled cursor-pointer w-5 h-5' />
                                     </Tooltip>
-                                    <Tooltip
-                                        content={(
-                                            <div className='flex flex-col h-64 w-72 gap-4 p-2'>
-                                                <span className='font-(500 size-lg)'>
-                                                    <FormattedMessage defaultMessage='Playlist ({total})' values={{ total: playlist.length }} />
-                                                </span>
-                                                <Virtuoso
-                                                    totalCount={playlist.length}
-                                                    itemContent={(index) => {
-                                                        const thatSong = playlist[index];
-                                                        return (
-                                                            <div className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center' onDoubleClick={() => player.setCurrentSong(song)}>
-                                                                <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
-                                                                <div className='flex flex-col *:text-truncate max-w-56'>
-                                                                    <span className={`color-text-pri font-size-xs font-500 ${song.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
-                                                                    <span className={`color-text-sec font-size-xs ${song.id === thatSong.id ? '!color-fg-pri' : ''}`}>{thatSong.album}</span>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }}
-                                                />
-                                            </div>
-                                        )}
-                                        className='flex w-5 h-5'
-                                        trigger='click'
-                                        placement='top-right'
-                                    >
-                                        <span className='i-fluent:navigation-play-20-filled cursor-pointer w-5 h-5' />
-                                    </Tooltip>
+                                    <PlaylistTooltip />
                                 </div>
                             </div>
                         </div>
