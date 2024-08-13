@@ -28,7 +28,9 @@ function App () {
         document.addEventListener('contextmenu', disableContextMenu);
         return () => {
             document.removeEventListener('contextmenu', disableContextMenu);
-            document.removeEventListener('keydown', disableRefresh);
+            if (import.meta.env.PROD) {
+                document.removeEventListener('keydown', disableRefresh);
+            }
         };
     }, []);
     return (

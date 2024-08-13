@@ -9,7 +9,7 @@ use cache_manager::{CacheManager, CacheManagerState};
 use media_control::MediaControlState;
 use rodio::OutputStream;
 use std::sync::{Arc, Condvar, Mutex, Once};
-use tauri::{Emitter, Manager};
+use tauri::{image::Image, Emitter, Manager};
 use std::sync::atomic::AtomicBool;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
@@ -48,8 +48,11 @@ pub async fn run() {
             let pause_resume = MenuItemBuilder::with_id("pause_resume", "Pause/Resume").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
             let menu = MenuBuilder::new(app).items(&[&show, &pause_resume, &quit]).build()?;
-            
-            let tray = TrayIconBuilder::new()
+
+            let _tray = TrayIconBuilder::new()
+                .title("Cicadas")
+                .tooltip("Cicadas")
+                .icon(Image::from_path("./icons/32x32.png")?)  // Set the icon using the resolved path
                 .menu(&menu)
                 .on_menu_event(move |app, event| {
                     match event.id().as_ref() {
@@ -82,9 +85,6 @@ pub async fn run() {
                     }
                 })
                 .build(app)?;
-
-            tray.set_title(Some("Cicadas"))?;
-            tray.set_tooltip(Some("Cicadas"))?;
 
             Ok(())
         })
