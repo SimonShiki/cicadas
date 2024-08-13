@@ -115,6 +115,8 @@ pub async fn run() {
             local_scanner::scan_folder,
             cache_manager::get_cached_song,
             cache_manager::cache_song,
+            cache_manager::get_cache_size,
+            cache_manager::clear_cache,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

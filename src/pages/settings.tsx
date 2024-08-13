@@ -13,16 +13,19 @@ import { storagesJotai } from '../jotais/storage';
 import Tooltip from '../components/base/tooltip';
 import Modal from '../components/base/modal';
 import md5 from 'md5';
-import { NCMConfig } from '../storages/ncm';
+import type { NCMConfig, NCMQuality } from '../storages/ncm';
 import Spinner from '../components/base/spinner';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { langMap } from '../../locales';
+import { clearCache, getCacheSize } from '../utils/cache.';
+import { nowPlayingBarJotai } from '../jotais/play';
 
 const streamingJotai = focusAtom(settingsJotai, (optic) => optic.prop('streaming'));
 const localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local')) as unknown as WritableAtom<LocalConfig, [SetStateAction<LocalConfig>], void>;
 const ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm')) as unknown as WritableAtom<NCMConfig, [SetStateAction<NCMConfig>], void>;
 const ncmCookieJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('cookie'));
 const ncmLoggedInJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('loggedIn'));
+const ncmDefaultQualityJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('defaultQuality'));
 const ncmApiJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('api'));
 const ncmProfileJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('profile'));
 const localFoldersJotai = focusAtom(localStorageConfigJotai, (optic) => optic.prop('folders'));
@@ -40,14 +43,18 @@ export default function Settings () {
     const [ncmAuthModalOpen, setNcmAuthModalOpen] = useState(false);
     const [qr, setQr] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
+    const [cacheSize, setCacheSize] = useState(-1);
+    const [clearingCache, setClearingCache] = useState(false);
     const {instance: localStorage} = useAtomValue(localStorageJotai);
     const ncmConfig = useAtomValue(ncmStorageConfigJotai);
     const localScanned = useAtomValue(localScannedJotai);
     const setNCMCookie = useSetAtom(ncmCookieJotai);
     const [ncmLoggedIn, setNCMloggedIn] = useAtom(ncmLoggedInJotai);
     const [streaming, setStreaming] = useAtom(streamingJotai);
+    const barOpen = useAtomValue(nowPlayingBarJotai);
     const [ncmProfile, setNCMProfile] = useAtom(ncmProfileJotai);
     const [ncmAPI, setNcmAPI] = useAtom(ncmApiJotai);
+    const [ncmQuality, setNcmQuality] = useAtom(ncmDefaultQualityJotai);
     const intl = useIntl();
 
     const autoScanOptions = [
@@ -56,6 +63,30 @@ export default function Settings () {
         { value: 'weekly', label: intl.formatMessage({ defaultMessage: 'Weekly'}) } as const,
         { value: 'never', label: intl.formatMessage({ defaultMessage: 'Never'}) } as const
     ];
+
+    const ncmQualityOptions: { value: NCMQuality, label: string}[] = [
+        { value: 'standard', label: intl.formatMessage({defaultMessage: 'Standard'}) },
+        { value: 'higher', label: intl.formatMessage({defaultMessage: 'High'}) },
+        { value: 'exhigh', label: intl.formatMessage({ defaultMessage: 'Very High' }) },
+        { value: 'lossless', label: intl.formatMessage({ defaultMessage: 'Lossless' }) },
+        { value: 'hires', label: intl.formatMessage({ defaultMessage: 'Hi-Res' }) },
+        { value: 'jyeffect', label: intl.formatMessage({ defaultMessage: 'HD Surround' }) },
+        { value: 'sky', label: intl.formatMessage({ defaultMessage: 'Immersive Surround' }) },
+        { value: 'jymaster', label: intl.formatMessage({ defaultMessage: 'Ultra HD Mastering' }) }
+    ];
+
+    useEffect(() => {
+        if (cacheSize > 0) return;
+        getCacheSize().then(setCacheSize);
+    }, [cacheSize]);
+
+    useEffect(() => {
+        if (!clearingCache) return;
+        clearCache().then(() => {
+            setCacheSize(-1);
+            setClearingCache(false);
+        });
+    }, [clearingCache]);
 
     useEffect(() => {
         if (!qr) {
@@ -131,7 +162,7 @@ export default function Settings () {
 
     return (
         <main className='flex flex-col gap-4'>
-            <div className='flex flex-col gap-2 pl-2'>
+            <div className={`flex flex-col gap-2 pl-2 ${barOpen ? 'pb-20' : ''}`}>
                 <span className='color-text-pri font-size-3xl font-500 grow-1'>
                     <FormattedMessage defaultMessage='Settings' />
                 </span>
@@ -159,6 +190,24 @@ export default function Settings () {
                         <Tooltip content={intl.formatMessage({ defaultMessage: 'Streaming does not currently support adjusting playback progress'})} placement='left' tooltipClassName='min-w-50'>
                             <Switch checked={streaming} onChange={setStreaming} />
                         </Tooltip>
+                    </div>
+                </Card>
+                <Card className='flex flex-col gap-2 color-text-pri'>
+                    <div className='flex flex-row items-center gap-4'>
+                        <span className='i-fluent:database-arrow-down-20-regular w-5 h-5' />
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Cache' />
+                        </span>
+                        <span className='font-size-sm color-text-sec'>{cacheSize < 0 ? (
+                            <FormattedMessage defaultMessage='Loading...' />
+                        ) : (
+                            <FormattedMessage defaultMessage='{megabyte} MB' values={{ megabyte: Math.ceil(cacheSize / 1048576)}} />
+                        )}</span>
+                        <Button disabled={clearingCache} onClick={() => {
+                            setClearingCache(true);
+                        }}>
+                            <FormattedMessage defaultMessage='Clear' />
+                        </Button>
                     </div>
                 </Card>
                 <span className='color-text-pri font-size-sm my-2'>
@@ -219,6 +268,108 @@ export default function Settings () {
                     </div>
                 </Card>
                 <span className='color-text-pri font-size-sm my-2'>
+                    <FormattedMessage defaultMessage='NetEase Cloud Music' />
+                </span>
+                <Card className='flex flex-col gap-2 color-text-pri'>
+                    <div className='flex flex-row items-center gap-4'>
+                        <span className='i-fluent:person-24-regular w-5 h-5' />
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='163 Account' />
+                        </span>
+                        {ncmProfile && (
+                            <div className='flex items-center gap-2'>
+                                <img src={ncmProfile.avatarUrl} draggable={false} className="w-6 h-6 aspect-square rounded-full" />
+                                <span className='font-size-sm'>{ncmProfile.nickname}</span>
+                            </div>
+                        )}
+                        <Button onClick={() => {
+                            if (ncmLoggedIn) {
+                                setNCMCookie(undefined);
+                                setNCMProfile(undefined);
+                                setNCMloggedIn(false);
+                            } else {
+                                setNcmAuthModalOpen(true);
+                            }
+                        }} className='flex flex-row gap-2 items-center'>{ncmLoggedIn ? (
+                                <>
+                                    <span className='i-fluent:arrow-exit-20-regular w-5 h-5' />
+                                    <span>
+                                        <FormattedMessage defaultMessage='Sign Out' />
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className='i-fluent:arrow-enter-20-regular w-5 h-5' />
+                                    <span>
+                                        <FormattedMessage defaultMessage='Sign In' />
+                                    </span>
+                                </>
+
+                            )}</Button>
+                        <Modal open={ncmAuthModalOpen} onClose={() => {
+                            setNcmAuthModalOpen(false);
+                        }} className='flex flex-col gap-4'>
+                            <span className='font-(size-xl 500)'>
+                                <FormattedMessage defaultMessage='Sign In' />
+                            </span>
+                            <div className='flex items-center gap-6'>
+                                {qr ? (
+                                    <div>
+                                        {qrUrl ? (
+                                            <img src={qrUrl} className='w-60 aspect-square' />
+                                        ) : <div className='w-60 h-60 flex justify-center items-center'><Spinner /></div>
+                                        }
+                                    </div>
+                                ) : (
+                                    <>
+                                        <span className='i-fluent:person-lock-24-regular w-16 h-16' /><form className='flex flex-col gap-2' onSubmit={handleSignin}>
+                                            <Input placeholder={intl.formatMessage({ defaultMessage: 'Phone' })} value={phone} onChange={(e) => {
+                                                setPhone(e.target.value);
+                                            }} type='tel' size={28} />
+                                            <Input placeholder={intl.formatMessage({ defaultMessage: 'Password' })} value={password} onChange={(e) => {
+                                                setPassword(e.target.value);
+                                            }} type='password' size={28} />
+                                            <div className='flex mt-2 gap-2 items-center'>
+                                                <span onClick={() => {
+                                                    setQr(true);
+                                                }} className='color-fg-pri grow-1 font-size-sm cursor-pointer'>
+                                                    <FormattedMessage defaultMessage='Use QRCode' />
+                                                </span>
+                                                <Button size='lg' onClick={() => {
+                                                    setNcmAuthModalOpen(false);
+                                                }}>
+                                                    <FormattedMessage defaultMessage='Cancel' />
+                                                </Button>
+                                                <Button variant='primary' size='lg'>
+                                                    <FormattedMessage defaultMessage='Sign In' />
+                                                </Button>
+                                            </div>
+                                        </form>
+                                    </>
+                                )}
+                            </div>
+                        </Modal>
+                    </div>
+                </Card>
+                <Card className='flex flex-col gap-2 color-text-pri'>
+                    <div className='flex flex-row items-center gap-4'>
+                        <span className='i-fluent:window-20-regular w-5 h-5' />
+                        <span className='grow-1'>API URL</span>
+                        <Input value={ncmAPI} size={32} onChange={(e) => {
+                            setNcmAPI(e.target.value);
+                        }} />
+                    </div>
+                </Card>
+                <Card className='flex flex-col gap-2 color-text-pri'>
+                    <div className='flex flex-row items-center gap-4'>
+                        <span className='i-fluent:cd-16-regular w-5 h-5' />
+                        <span className='grow-1'>
+                            <FormattedMessage defaultMessage='Default song quality' />
+                        </span>
+                        <Select value={ncmQuality} options={ncmQualityOptions} position='left' onChange={(value) => setNcmQuality(value)} />
+                    </div>
+                </Card>
+                <span className='color-text-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='WebDAV' />
                 </span>
                 <Card className='flex flex-col gap-2 color-text-pri'>
@@ -259,108 +410,6 @@ export default function Settings () {
                         <Button className='flex flex-row gap-2 items-center'>
                             <FormattedMessage defaultMessage='Start' />
                         </Button>
-                    </div>
-                </Card>
-                <span className='color-text-pri font-size-sm my-2'>
-                    <FormattedMessage defaultMessage='NetEase Cloud Music' />
-                </span>
-                <Card className='flex flex-col gap-2 color-text-pri'>
-                    <div className='flex flex-row items-center gap-4'>
-                        <span className='i-fluent:person-24-regular w-5 h-5' />
-                        <span className='grow-1'>
-                            <FormattedMessage defaultMessage='163 Account' />
-                        </span>
-                        {ncmProfile && (
-                            <div className='flex items-center gap-2'>
-                                <img src={ncmProfile.avatarUrl} draggable={false} className="w-6 h-6 aspect-square rounded-full" />
-                                <span className='font-size-sm'>{ncmProfile.nickname}</span>
-                            </div>
-                        )}
-                        <Button onClick={() => {
-                            if (ncmLoggedIn) {
-                                setNCMCookie(undefined);
-                                setNCMProfile(undefined);
-                                setNCMloggedIn(false);
-                            } else {
-                                setNcmAuthModalOpen(true);
-                            }
-                        }} className='flex flex-row gap-2 items-center'>{ncmLoggedIn ? (
-                                <>
-                                    <span className='i-fluent:arrow-exit-20-regular w-5 h-5' />
-                                    <span>
-                                        <FormattedMessage defaultMessage='Sign Out' />
-                                    </span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className='i-fluent:arrow-enter-20-regular w-5 h-5' />
-                                    <span>
-                                        <FormattedMessage defaultMessage='Sign In' />
-                                    </span>
-                                </>
-                                
-                            )}</Button>
-                        <Modal open={ncmAuthModalOpen} onClose={() => {
-                            setNcmAuthModalOpen(false);
-                        }} className='flex flex-col gap-4'>
-                            <span className='font-(size-xl 500)'>
-                                <FormattedMessage defaultMessage='Sign In' />
-                            </span>
-                            <div className='flex items-center gap-6'>
-                                {qr ? (
-                                    <div>
-                                        {qrUrl ? (
-                                            <img src={qrUrl} className='w-60 aspect-square' />
-                                        ) : <div className='w-60 h-60 flex justify-center items-center'><Spinner /></div>
-                                        }
-                                    </div>
-                                ) : (
-                                    <>
-                                        <span className='i-fluent:person-lock-24-regular w-16 h-16' /><form className='flex flex-col gap-2' onSubmit={handleSignin}>
-                                            <Input placeholder='Phone' value={phone} onChange={(e) => {
-                                                setPhone(e.target.value);
-                                            } } type='tel' size={28} />
-                                            <Input placeholder='Password' value={password} onChange={(e) => {
-                                                setPassword(e.target.value);
-                                            } } type='password' size={28} />
-                                            <div className='flex mt-2 gap-2 items-center'>
-                                                <span onClick={() => {
-                                                    setQr(true);
-                                                } } className='color-fg-pri grow-1 font-size-sm cursor-pointer'>
-                                                    <FormattedMessage defaultMessage='Use QRCode' />
-                                                </span>
-                                                <Button size='lg' onClick={() => {
-                                                    setNcmAuthModalOpen(false);
-                                                } }>
-                                                    <FormattedMessage defaultMessage='Cancel' />
-                                                </Button>
-                                                <Button variant='primary' size='lg'>
-                                                    <FormattedMessage defaultMessage='Sign In' />
-                                                </Button>
-                                            </div>
-                                        </form>
-                                    </>    
-                                )}
-                            </div>
-                        </Modal>
-                    </div>
-                </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
-                    <div className='flex flex-row items-center gap-4'>
-                        <span className='i-fluent:window-20-regular w-5 h-5' />
-                        <span className='grow-1'>API URL</span>
-                        <Input value={ncmAPI} size={32} onChange={(e) => {
-                            setNcmAPI(e.target.value);
-                        }} />
-                    </div>
-                </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
-                    <div className='flex flex-row items-center gap-4'>
-                        <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
-                        <span className='grow-1'>
-                            <FormattedMessage defaultMessage='Sync song lists' />
-                        </span>
-                        <Switch />
                     </div>
                 </Card>
             </div>

@@ -5,7 +5,7 @@ import { AbstractStorage, Song, storagesJotai } from '../jotais/storage';
 import { mergeDeep } from '../utils/merge-deep';
 import type { SetStateAction, WritableAtom } from 'jotai';
 import { backendStorage } from '../utils/local-utitity';
-import { fetchArraybuffer, fetchBuffer } from '../utils/chunk-transformer';
+import { fetchBuffer } from '../utils/chunk-transformer';
 import { currentSongJotai } from '../jotais/play';
 import { mergeLyrics } from '../utils/lyric-parser';
 import { cacheSong, getCachedSong } from '../utils/cache.';
@@ -262,7 +262,7 @@ interface NCMProfile {
     anchor: boolean;
 }
 
-type NCMQuality = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires' | 'jyeffect' | 'sky' | 'jymaster';
+export type NCMQuality = 'standard' | 'higher' | 'exhigh' | 'lossless' | 'hires' | 'jyeffect' | 'sky' | 'jymaster';
 
 export interface NCMConfig extends StorageConfig<'ncm'> {
     cookie?: string;

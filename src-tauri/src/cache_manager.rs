@@ -14,7 +14,6 @@ pub struct CacheManager {
 }
 
 struct CacheItem {
-    id: u64,
     path: PathBuf,
     size: u64,
     last_accessed: std::time::SystemTime,
@@ -55,7 +54,6 @@ impl CacheManager {
                             .unwrap_or(0);
 
                         let item = CacheItem {
-                            id,
                             path: entry.path(),
                             size: metadata.len(),
                             last_accessed: metadata.modified().unwrap_or_else(|_| std::time::SystemTime::now()),
@@ -94,7 +92,6 @@ impl CacheManager {
         items.insert(
             id,
             CacheItem {
-                id,
                 path: file_path,
                 size: data.len() as u64,
                 last_accessed: std::time::SystemTime::now(),
@@ -124,6 +121,22 @@ impl CacheManager {
 
         Ok(())
     }
+
+    pub fn get_cache_size(&self) -> u64 {
+        *self.current_cache_size.lock().unwrap()
+    }
+
+    pub fn clear_cache(&self) -> Result<(), String> {
+        let mut items = self.cache_items.lock().unwrap();
+        let mut current_size = self.current_cache_size.lock().unwrap();
+
+        for (_, item) in items.drain() {
+            fs::remove_file(&item.path).map_err(|e| e.to_string())?;
+        }
+
+        *current_size = 0;
+        Ok(())
+    }
 }
 
 #[tauri::command]
@@ -134,4 +147,14 @@ pub fn get_cached_song(id: u64, state: State<CacheManagerState>) -> Option<Vec<u
 #[tauri::command]
 pub fn cache_song(id: u64, data: Vec<u8>, state: State<CacheManagerState>) -> Result<(), String> {
     state.0.cache_song(id, &data)
+}
+
+#[tauri::command]
+pub fn get_cache_size(state: State<CacheManagerState>) -> u64 {
+    state.0.get_cache_size()
+}
+
+#[tauri::command]
+pub fn clear_cache(state: State<CacheManagerState>) -> Result<(), String> {
+    state.0.clear_cache()
 }

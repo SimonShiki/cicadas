@@ -292,9 +292,6 @@ export function setCurrentSong (song: Song<string>) {
 
 export function clearPlaylist () {
     sharedStore.set(playlistJotai, []);
-    sharedStore.set(currentSongJotai, undefined);
-    pause();
-    sharedStore.set(progressJotai, 0);
 }
 
 export function play () {
@@ -342,7 +339,7 @@ export function previous () {
     const prevIndex = getPreviousIndex(currentIndex, playlist.length);
 
     if (prevIndex !== -1) {
-        sharedStore.set(currentSongJotai, playlist[prevIndex]);
+        setCurrentSong(playlist[prevIndex]);
         if (playMode !== 'single') {
             sharedStore.set(playingJotai, true);
         }

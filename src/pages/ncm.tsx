@@ -15,11 +15,6 @@ import SonglistItem from '../components/songlist-item';
 import { FormattedMessage, useIntl } from 'react-intl';
 import Pagination from '../components/base/pagination';
 
-interface NCMProfile {
-    nickname: string;
-    avatarUrl: string;
-}
-
 const ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm')) as unknown as WritableAtom<NCMConfig, [SetStateAction<NCMConfig>], void>;
 const ncmStorageJotai = focusAtom(storagesJotai, (optic) => optic.prop('ncm'));
 const profileJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('profile'));
