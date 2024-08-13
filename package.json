@@ -1,7 +1,7 @@
 {
   "name": "cicadas",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "prepare": "husky",
@@ -35,7 +35,7 @@
     "@formatjs/ts-transformer": "^3.13.14",
     "@iconify-json/fluent": "^1.1.60",
     "@iconify-json/simple-icons": "^1.1.111",
-    "@tauri-apps/cli": ">=2.0.0-rc.0",
+    "@tauri-apps/cli": ">=2.0.0-rc.2",
     "@types/md5": "^2.3.5",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
