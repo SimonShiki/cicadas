@@ -339,6 +339,7 @@ export class NCM implements AbstractStorage {
         const cachedNCMSong = await backendStorage.get('cachedNCMSong');
         if (!cachedNCMSong) {
             await backendStorage.set('cachedNCMSong', []);
+            this.scanned = true;
             return;
         }
 
