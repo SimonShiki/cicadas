@@ -10,8 +10,15 @@ sharedStore.sub(scannedJotai, () => {
 
     const list: Song<string>[] = [];
     const storages = sharedStore.get(storagesJotai);
+    const idPool: Song<string>['id'][] = [];
     for (const storageId in storages) {
-        const { songList } = storages[storageId];
+        let { songList } = storages[storageId];
+        songList = songList.filter((song) => {
+            if (!idPool.includes(song.id)) {
+                idPool.push(song.id);
+                return true;
+            }
+        });
         list.push(...songList);
     }
 
