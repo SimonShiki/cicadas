@@ -36,7 +36,7 @@ function App () {
     return (
         <div className='flex flex-row'>
             <Navigation />
-            <div className={`flex flex-col bg-white bg-opacity-60 rounded-1.5 border-(1 solid outline-pri) w-full h-[calc(100vh-84px)] overflow-auto p-4 ${animating ? 'overflow-hidden' : ''}`}>
+            <div className={`flex flex-col bg-white dark:bg-bg-dark-mica dark:bg-opacity-60 bg-opacity-60 rounded-1.5 border-(1 solid outline-pri) dark:border-outline-dark-pri w-full h-[calc(100vh-84px)] overflow-auto p-4 ${animating ? 'overflow-hidden' : ''}`}>
                 <div className={animating ? 'fadePageIn' : ''} onAnimationEnd={() => {
                     setAnimating(false);
                 }}>

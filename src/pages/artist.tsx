@@ -24,7 +24,7 @@ export default function ArtistPage () {
     return (
         <main className='flex flex-col h-[calc(100vh-100px)]'>
             <div className='flex flex-col gap-4 pl-2 pt-4'>
-                <span className='color-text-pri font-size-3xl font-500'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-3xl font-500'>
                     <FormattedMessage defaultMessage='Artists' />
                 </span>
                 <div className='flex flex-row items-center gap-4'>

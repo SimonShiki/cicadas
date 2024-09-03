@@ -38,7 +38,7 @@ export default function Tooltip ({ content, placement = 'top', trigger = 'hover'
     };
 
     const getTooltipClasses = () => {
-        const baseClasses = 'absolute z-2000 p-2 shadow-lg bg-white dark:bg-black border-(1 solid outline-pri) dark:border-outline-dark-pri rounded-1.5 text-text-pri dark:text-text-dark-pri text-sm transition-all duration-150';
+        const baseClasses = 'absolute z-2000 p-2 shadow-lg bg-white dark:bg-bg-dark-pri border-(1 solid outline-pri) dark:border-outline-dark-pri rounded-1.5 text-text-pri dark:text-text-dark-pri text-sm transition-all duration-150';
         let positionClasses = '';
         const visibilityClasses = isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none';
         let animationClasses = '';
@@ -90,29 +90,29 @@ export default function Tooltip ({ content, placement = 'top', trigger = 'hover'
         switch (placement) {
         case 'top':
         case 'top-center':
-            positionClasses = 'bottom-[-6px] left-1/2 -translate-x-1/2 border-t-white dark:border-t-black border-l-[6px] border-r-[6px] border-t-[6px]';
+            positionClasses = 'bottom-[-6px] left-1/2 -translate-x-1/2 border-t-white dark:border-t-bg-dark-pri border-l-[6px] border-r-[6px] border-t-[6px]';
             break;
         case 'top-left':
-            positionClasses = 'bottom-[-6px] left-[10px] border-t-white dark:border-t-black border-l-[6px] border-r-[6px] border-t-[6px]';
+            positionClasses = 'bottom-[-6px] left-[10px] border-t-white dark:border-t-bg-dark-pri border-l-[6px] border-r-[6px] border-t-[6px]';
             break;
         case 'top-right':
-            positionClasses = 'bottom-[-6px] right-[10px] border-t-white dark:border-t-black border-l-[6px] border-r-[6px] border-t-[6px]';
+            positionClasses = 'bottom-[-6px] right-[10px] border-t-white dark:border-t-bg-dark-pri border-l-[6px] border-r-[6px] border-t-[6px]';
             break;
         case 'bottom':
         case 'bottom-center':
-            positionClasses = 'top-[-6px] left-1/2 -translate-x-1/2 border-b-white dark:border-b-black border-l-[6px] border-r-[6px] border-b-[6px]';
+            positionClasses = 'top-[-6px] left-1/2 -translate-x-1/2 border-b-white dark:border-b-bg-dark-pri border-l-[6px] border-r-[6px] border-b-[6px]';
             break;
         case 'bottom-left':
-            positionClasses = 'top-[-6px] left-[10px] border-b-white dark:border-b-black border-l-[6px] border-r-[6px] border-b-[6px]';
+            positionClasses = 'top-[-6px] left-[10px] border-b-white dark:border-b-bg-dark-pri border-l-[6px] border-r-[6px] border-b-[6px]';
             break;
         case 'bottom-right':
-            positionClasses = 'top-[-6px] right-[10px] border-b-white dark:border-b-black border-l-[6px] border-r-[6px] border-b-[6px]';
+            positionClasses = 'top-[-6px] right-[10px] border-b-white dark:border-b-bg-dark-pri border-l-[6px] border-r-[6px] border-b-[6px]';
             break;
         case 'left':
-            positionClasses = 'right-[-6px] top-1/2 -translate-y-1/2 border-l-white dark:border-l-black border-t-[6px] border-b-[6px] border-l-[6px]';
+            positionClasses = 'right-[-6px] top-1/2 -translate-y-1/2 border-l-white dark:border-l-bg-dark-pri border-t-[6px] border-b-[6px] border-l-[6px]';
             break;
         case 'right':
-            positionClasses = 'left-[-6px] top-1/2 -translate-y-1/2 border-r-white dark:border-r-black border-t-[6px] border-b-[6px] border-r-[6px]';
+            positionClasses = 'left-[-6px] top-1/2 -translate-y-1/2 border-r-white dark:border-r-bg-dark-pri border-t-[6px] border-b-[6px] border-r-[6px]';
             break;
         }
 

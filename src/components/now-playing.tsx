@@ -67,7 +67,7 @@ export default function NowPlaying () {
     return (
         <>
             <div className='absolute bottom-0 left-0 flex w-full pointer-events-none'>
-                <Card className='!bg-white pointer-events-auto mx-auto mb-4 flex flex-col shadow-xl w-80vw lg:w-200 !p-0'>
+                <Card className='!bg-white !dark:bg-bg-dark-ter pointer-events-auto mx-auto mb-4 flex flex-col shadow-xl w-80vw lg:w-200 !p-0'>
                     <Progress value={progress * 1000} infinite={buffering} max={song.duration} height='h-0.5' />
                     <div className='flex items-center m-4 justify-between'>
                         <div className='flex flex-row gap-4 w-1/3'>
@@ -75,12 +75,12 @@ export default function NowPlaying () {
                                 setGlobalFullscreen(true);
                             }} />
                             <div className='flex flex-col gap-1 lg:max-w-60 overflow-hidden *:text-truncate'>
-                                <span className='color-text-pri font-size-sm font-500'>{song.name}</span>
-                                <span className='color-text-sec font-size-xs'>{song.album}</span>
+                                <span className='color-text-pri dark:color-text-dark-pri font-size-sm font-500'>{song.name}</span>
+                                <span className='color-text-sec dark:color-text-dark-sec font-size-xs'>{song.album}</span>
                             </div>
                         </div>
                         <div className='flex-1 flex justify-center'>
-                            <div className='flex flex-row gap-2 color-text-pri items-center'>
+                            <div className='flex flex-row gap-2 color-text-pri dark:color-text-dark-pri items-center'>
                                 <span className='i-fluent:previous-24-filled w-4 h-4 cursor-pointer' onClick={player.previous} />
                                 <Button rounded disabled={buffering} iconOnly className='flex justify-center items-center w-9 h-9' onClick={handlePlayPause}>
                                     <span className={`${playing ? 'i-fluent:pause-24-filled' : 'i-fluent:play-24-filled'} w-6 h-6`} />

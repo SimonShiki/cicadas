@@ -104,7 +104,7 @@ export default function SongPage () {
     return (
         <main className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 pl-2'>
-                <span className='color-text-pri font-size-3xl font-500'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-3xl font-500'>
                     <FormattedMessage defaultMessage='Songs' />
                 </span>
                 <div className='flex flex-row items-center flex-wrap gap-2'>
@@ -140,7 +140,7 @@ export default function SongPage () {
                         <Input placeholder={intl.formatMessage({ defaultMessage: 'Search' })} value={keyword} onChange={(e) => {
                             setKeyword(e.target.value);
                         }} after={<span className='i-fluent:search-20-regular' />} />
-                        <span className='color-text-pri font-size-sm'>
+                        <span className='color-text-pri dark:color-text-dark-pri font-size-sm'>
                             <FormattedMessage defaultMessage='Sort By:' />
                         </span>
                         <Select position='left' options={sortOptions} onChange={option => {

@@ -106,7 +106,7 @@ export default function NCM () {
     return (
         <main className="flex flex-col gap-6">
             <div className="flex flex-col gap-4 pl-2">
-                <span className="color-text-pri font-size-3xl font-500">
+                <span className="color-text-pri dark:color-text-dark-pri font-size-3xl font-500">
                     <FormattedMessage defaultMessage='NCM' />
                 </span>
                 <div className="flex flex-row items-center gap-4">
@@ -121,7 +121,7 @@ export default function NCM () {
                             ) : <Spinner size="size-4" />}
                         </div>
                     ) : (
-                        <span className="font-size-sm color-text-sec">
+                        <span className="font-size-sm color-text-sec dark:color-text-dark-sec">
                             <FormattedMessage defaultMessage="You've not logged in..." />
                         </span>
                     )}
@@ -197,7 +197,7 @@ export default function NCM () {
                     />
                 ) : (
                     <div className="flex-1 flex justify-center items-center">
-                        {ncmConfig.loggedIn ? <Spinner /> : <span className="color-text-sec">
+                        {ncmConfig.loggedIn ? <Spinner /> : <span className="color-text-sec dark:color-text-dark-sec">
                             <FormattedMessage defaultMessage='Sign in to get the song list...' />
                         </span>}
                     </div>

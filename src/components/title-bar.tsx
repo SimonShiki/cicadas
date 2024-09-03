@@ -44,7 +44,7 @@ export default function TitleBar () {
                 } else {
                     history.back();
                 }
-            }} className={`h-9 w-12 bg-black ${fullscreen ? 'bg-white color-white' : ''} bg-opacity-0 hover:bg-opacity-10 active:hover:bg-opacity-20 transition-colors flex justify-center items-center`}>
+            }} className={`h-9 w-12 bg-black dark:bg-white dark:bg-op-0 ${fullscreen ? 'bg-white color-white' : ''} bg-opacity-0 hover:bg-opacity-10 active:hover:bg-opacity-20 transition-colors flex justify-center items-center`}>
                 <span className={`i-fluent:arrow-left-16-regular ${focus ? 'opacity-100' : 'opacity-40'}`} />
             </div>
             <span data-tauri-drag-region className={`color-text-pri ${fullscreen ? 'color-white' : ''} transition-color dark:color-text-dark-pri font-size-xs grow-1 pl-4 ${focus ? 'color-opacity-100' : 'color-opacity-40'}`}>
@@ -52,7 +52,7 @@ export default function TitleBar () {
             </span>
             <div onClick={() => {
                 appWindow.minimize();
-            }} className={`h-9 w-12 bg-black ${fullscreen ? 'bg-white color-white' : ''} transition-color bg-opacity-0 hover:bg-opacity-10 active:hover:bg-opacity-20 transition-colors flex justify-center items-center`}>
+            }} className={`h-9 w-12 bg-black dark:bg-white dark:bg-op-0 ${fullscreen ? 'bg-white color-white' : ''} transition-color bg-opacity-0 hover:bg-opacity-10 active:hover:bg-opacity-20 transition-colors flex justify-center items-center`}>
                 <span className={`i-fluent:minimize-16-regular ${focus ? 'opacity-100' : 'opacity-40'}`} />
             </div>
             <div onClick={() => {
@@ -61,13 +61,13 @@ export default function TitleBar () {
                 } else {
                     appWindow.maximize();
                 }
-            }} className={`h-9 w-12 bg-black bg-opacity-0 ${fullscreen ? 'bg-white color-white' : ''} hover:bg-opacity-10 active:hover:bg-opacity-20 transition-colors flex justify-center items-center`}>
+            }} className={`h-9 w-12 bg-black dark:bg-white dark:bg-op-0 bg-opacity-0 ${fullscreen ? 'bg-white color-white' : ''} hover:bg-opacity-10 active:hover:bg-opacity-20 transition-colors flex justify-center items-center`}>
                 <span className={`${maximized ? 'i-fluent:square-multiple-16-regular' : 'i-fluent:maximize-16-regular'} ${focus ? 'opacity-100' : 'opacity-40'}`} />
             </div>
             <div onClick={() => {
                 appWindow.close();
             }} className='group h-9 w-12 hover:bg-[#c42b1c] active:hover:bg-[#c53d2e] transition-colors flex justify-center items-center'>
-                <span className={`i-fluent:dismiss-20-regular color-black ${fullscreen ? '!color-white' : ''} transition-color group-hover:!color-[white] ${focus ? 'color-opacity-100' : 'color-opacity-40'}`} />
+                <span className={`i-fluent:dismiss-20-regular color-black dark:color-white ${fullscreen ? '!color-white' : ''} transition-color group-hover:!color-[white] ${focus ? 'color-opacity-100' : 'color-opacity-40'}`} />
             </div>
         </div>
     );

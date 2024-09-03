@@ -163,13 +163,13 @@ export default function Settings () {
     return (
         <main className='flex flex-col gap-4'>
             <div className={`flex flex-col gap-2 pl-2 ${barOpen ? 'pb-20' : ''}`}>
-                <span className='color-text-pri font-size-3xl font-500 grow-1'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-3xl font-500 grow-1'>
                     <FormattedMessage defaultMessage='Settings' />
                 </span>
-                <span className='color-text-pri font-size-sm my-2'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='Language' />
                 </span>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:local-language-zi-24-regular w-5 h-5' />
                         <span className='grow-1'>
@@ -178,10 +178,10 @@ export default function Settings () {
                         <Select value={locale} options={langMap} position='left' onChange={(value) => setLocale(value)} />
                     </div>
                 </Card>
-                <span className='color-text-pri font-size-sm my-2'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='Play' />
                 </span>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:stream-24-regular w-5 h-5' />
                         <span className='grow-1'>
@@ -192,13 +192,13 @@ export default function Settings () {
                         </Tooltip>
                     </div>
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:database-arrow-down-20-regular w-5 h-5' />
                         <span className='grow-1'>
                             <FormattedMessage defaultMessage='Cache' />
                         </span>
-                        <span className='font-size-sm color-text-sec'>{cacheSize < 0 ? (
+                        <span className='font-size-sm color-text-sec dark:color-text-dark-sec'>{cacheSize < 0 ? (
                             <FormattedMessage defaultMessage='Loading...' />
                         ) : (
                             <FormattedMessage defaultMessage='{megabyte} MB' values={{ megabyte: Math.ceil(cacheSize / 1048576)}} />
@@ -210,10 +210,10 @@ export default function Settings () {
                         </Button>
                     </div>
                 </Card>
-                <span className='color-text-pri font-size-sm my-2'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='Local' />
                 </span>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:folder-24-regular w-5 h-5' />
                         <span className='grow-1'>
@@ -225,7 +225,7 @@ export default function Settings () {
                         </Button>
                         <div onClick={() => {
                             setLocalFolderExpanded(!localFolderExpanded);
-                        }} className='bg-black bg-op-0 hover:bg-op-10 transition-colors w-5 h-5 flex items-center justify-center p-1 rounded-md'>
+                        }} className='bg-black dark:bg-white dark:bg-op-0 bg-op-0 hover:bg-op-10 transition-colors w-5 h-5 flex items-center justify-center p-1 rounded-md'>
                             <span className={`i-fluent:chevron-down-20-regular rounded-md w-5 h-5 transition-transform ${localFolderExpanded ? 'rotate-180deg ms-bezier' : ''}`} />
                         </div>
                     </div>
@@ -242,7 +242,7 @@ export default function Settings () {
                         ))
                     )}
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
                         <span className='grow-1'>
@@ -253,13 +253,13 @@ export default function Settings () {
                         }} />
                     </div>
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
                         <span className='grow-1'>
                             <FormattedMessage defaultMessage='Scan folders' />
                         </span>
-                        {!localScanned && <span className='font-size-sm color-text-sec'>
+                        {!localScanned && <span className='font-size-sm color-text-sec dark:color-text-dark-sec'>
                             <FormattedMessage defaultMessage='Scanning...' />
                         </span>}
                         <Button className='flex flex-row gap-2 items-center' onClick={localStorage.scan} disabled={!localScanned}>
@@ -267,10 +267,10 @@ export default function Settings () {
                         </Button>
                     </div>
                 </Card>
-                <span className='color-text-pri font-size-sm my-2'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='NetEase Cloud Music' />
                 </span>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:person-24-regular w-5 h-5' />
                         <span className='grow-1'>
@@ -351,7 +351,7 @@ export default function Settings () {
                         </Modal>
                     </div>
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:window-20-regular w-5 h-5' />
                         <span className='grow-1'>API URL</span>
@@ -360,7 +360,7 @@ export default function Settings () {
                         }} />
                     </div>
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:cd-16-regular w-5 h-5' />
                         <span className='grow-1'>
@@ -369,10 +369,10 @@ export default function Settings () {
                         <Select value={ncmQuality} options={ncmQualityOptions} position='left' onChange={(value) => setNcmQuality(value)} />
                     </div>
                 </Card>
-                <span className='color-text-pri font-size-sm my-2'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='WebDAV' />
                 </span>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:globe-24-regular w-5 h-5' />
                         <span className='grow-1'>
@@ -383,7 +383,7 @@ export default function Settings () {
                         </Button>
                     </div>
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:database-arrow-down-20-regular w-5 h-5' />
                         <span className='grow-1'>
@@ -392,7 +392,7 @@ export default function Settings () {
                         <Switch />
                     </div>
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
                         <span className='grow-1'>
@@ -401,7 +401,7 @@ export default function Settings () {
                         <Select value={localAutoScan} options={autoScanOptions} />
                     </div>
                 </Card>
-                <Card className='flex flex-col gap-2 color-text-pri'>
+                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:arrow-sync-20-filled w-5 h-5' />
                         <span className='grow-1'>

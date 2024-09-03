@@ -23,11 +23,11 @@ export default function PlaylistTooltip () {
                             return (
                                 <div onDoubleClickCapture={() => {
                                     player.setCurrentSong(thatSong);
-                                }} className='flex gap-2 py-2 border-b-(1 solid outline-pri) hover:bg-bg-pri cursor-pointer transition-colors items-center'>
+                                }} className='flex gap-2 py-2 border-b-(1 solid outline-pri) dark:border-b-outline-dark-pri hover:bg-bg-pri dark:hover:bg-bg-dark-sec cursor-pointer transition-colors items-center'>
                                     <img draggable={false} src={thatSong.cover ?? defaultCover} alt={thatSong.name} className='rounded-md w-8 h-8' />
                                     <div className='flex flex-col *:text-truncate max-w-56'>
-                                        <span className={`color-text-pri font-size-xs font-500 ${currentSong!.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
-                                        <span className={`color-text-sec font-size-xs ${currentSong!.id === thatSong.id ? '!color-fg-pri' : ''}`}>{thatSong.album}</span>
+                                        <span className={`color-text-pri dark:color-text-dark-pri font-size-xs font-500 ${currentSong!.id === thatSong.id ? 'color-fg-pri font-600' : ''}`}>{thatSong.name}</span>
+                                        <span className={`color-text-sec dark:color-text-dark-sec font-size-xs ${currentSong!.id === thatSong.id ? '!color-fg-pri' : ''}`}>{thatSong.album}</span>
                                     </div>
                                 </div>
                             );

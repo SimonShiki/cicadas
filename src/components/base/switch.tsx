@@ -57,7 +57,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch ({
                     ref={ref}
                 />
                 <div
-                    className={`${sizeMap[size]} ${isChecked ? `${color} border-transparent` : 'bg-bg-pri dark:bg-bg-dark-sec'} border-(1 solid outline-sec) rounded-full transition-colors duration-150 ease-in-out`}
+                    className={`${sizeMap[size]} ${isChecked ? `${color} border-transparent` : 'bg-bg-pri dark:bg-bg-dark-sec'} border-(1 solid outline-sec) dark:border-outline-dark-sec rounded-full transition-colors duration-150 ease-in-out`}
                 />
                 <div
                     className={`${thumbSizeMap[size]} group-hover:scale-110 absolute top-1.2 left-1 bg-text-sec rounded-full shadow transform transition-transform duration-150 ease-in-out ${isChecked ? 'translate-x-5 bg-white' : 'translate-x-0'

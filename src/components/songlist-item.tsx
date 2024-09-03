@@ -48,9 +48,9 @@ export default function SonglistItem (props: SonglistItemProps) {
         }} className={`!hover:border-outline-pri flex flex-row items-center active:scale-99 py-2 gap-2 hover:!bg-black cursor-pointer hover:!bg-op-5 transition-all ${props.hideBg ? '!border-none !bg-transparent' : ''}`}>
             <img draggable={false} src={props.cover ?? defaultCover} alt={props.name} className='rounded-md w-10 h-10' />
             <div className='flex flex-col *:text-ellipsis text-nowrap *:overflow-hidden'>
-                <span className='color-text-pri font-size-sm font-500'>{props.name}</span>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-sm font-500'>{props.name}</span>
                 {props.total !== undefined ? (
-                    <span className='font-size-sm color-text-sec'>
+                    <span className='font-size-sm color-text-sec dark:color-text-dark-sec'>
                         <FormattedMessage defaultMessage='{total} Songs' values={{ total: props.total }} />
                     </span>
                 ) : null}

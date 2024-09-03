@@ -77,10 +77,10 @@ function Select<T> ({
           ${sizeMap[size]}
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           border-(1 solid transparent) dark:border-outline-dark-pri
-          rounded-1.5 dark:bg-black font-size-sm font-400
-          hover:border-outline-pri hover:bg-white
+          rounded-1.5 dark:bg-bg-dark-pri font-size-sm font-400
+          hover:border-outline-pri dark:hover:border-outline-dark-sec hover:bg-white dark:hover-bg-bg-dark-sec
           transition-all
-          ${isOpen ? '!border-outline-pri' : ''}
+          ${isOpen ? '!border-outline-pri dark:!border-outline-dark-sec' : ''}
         `}
                     onClick={toggleDropdown}
                 >

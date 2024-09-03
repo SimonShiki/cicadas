@@ -10,7 +10,7 @@ interface NavItemProps {
 function NavItem ({ path, icon, label }: NavItemProps) {
     const location = useLocation();
     return (
-        <Link to={path} draggable={false} className='flex flex-row items-center gap-1 lg:gap-2 color-text-pri font-size-sm p-2 pl-0 bg-white rounded-1.5 bg-opacity-0 hover:bg-opacity-40 transition-all cursor-pointer'>
+        <Link to={path} draggable={false} className='flex flex-row items-center gap-1 lg:gap-2 color-text-pri dark:color-text-dark-pri font-size-sm p-2 pl-0 bg-white rounded-1.5 bg-opacity-0 hover:bg-opacity-40 dark:hover:bg-opacity-10 transition-all cursor-pointer'>
             <span className={`bg-fg-pri w-0.75 h-4 -mr-0.5 rounded-full ${location.pathname === path ? '' : 'invisible'}`} />
             <span className={`w-5 h-5 ${icon}`} />
             <span className='hidden lg:block'>{label}</span>
@@ -43,7 +43,7 @@ export default function Navigation () {
             {navItems.map((section, index) => (
                 <div key={index}>
                     <span className='hidden lg:block font-500 my-2'>{section.section}</span>
-                    <span className={`${index !== 0 ? 'block' : 'hidden'} my-1 lg:hidden w-full border-b-(1 solid outline-pri)`} />
+                    <span className={`${index !== 0 ? 'block' : 'hidden'} my-1 lg:hidden w-full border-b-(1 solid outline-pri) dark:border-b-outline-dark-pri`} />
                     {section.items.map((item, itemIndex) => (
                         <NavItem key={itemIndex} {...item} />
                     ))}

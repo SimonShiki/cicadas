@@ -57,7 +57,7 @@ export default function Local () {
     return (
         <main className='flex flex-col gap-6'>
             <div className='flex flex-col gap-4 pl-2'>
-                <span className='color-text-pri font-size-3xl font-500'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-3xl font-500'>
                     <FormattedMessage defaultMessage='Local' />
                 </span>
                 <div className='flex flex-row items-center gap-4'>
@@ -75,7 +75,7 @@ export default function Local () {
                     <Input placeholder={intl.formatMessage({ defaultMessage: 'Search'})} value={keyword} onChange={(e) => {
                         setKeyword(e.target.value);
                     }} after={<span className='i-fluent:search-20-regular' />} className='m-l-auto' />
-                    <span className='color-text-pri font-size-sm'>
+                    <span className='color-text-pri dark:color-text-dark-pri font-size-sm'>
                         <FormattedMessage defaultMessage='Sort By:' />
                     </span>
                     <Select position='left' options={sortOptions} onChange={option => {

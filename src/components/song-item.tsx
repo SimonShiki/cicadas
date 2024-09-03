@@ -84,12 +84,12 @@ export default function SongItem (props: SongItemProps) {
         }} onClickCapture={() => {
             if (!props.selectMode) return;
             props.onSelect?.(!props.select);
-        }} className={`flex flex-row items-center ${props.selectMode ? '' : 'active:scale-99'} py-2 gap-2 hover:!bg-black cursor-pointer hover:!bg-op-5 transition-all ${props.hideBg ? '!border-none !bg-transparent' : ''}`}>
+        }} className={`flex flex-row items-center ${props.selectMode ? '' : 'active:scale-99'} py-2 gap-2 hover:!bg-black dark:hover:!bg-white dark:hover:!bg-op-5 cursor-pointer hover:!bg-op-5 transition-all ${props.hideBg ? '!border-none !bg-transparent' : '!dark:bg-[#2f3338] '}`}>
             {props.selectMode && (<Checkbox checked={props.select} onChange={props.onSelect} />)}
             <img draggable={false} src={props.song.cover ?? defaultCover} alt={props.song.name} className='object-cover rounded-md w-10 h-10' />
             <div className='flex flex-col gap-1'>
-                <span className='color-text-pri font-size-sm font-500'>{props.song.name}</span>
-                <span className='color-text-sec font-size-xs'>{props.song.album}</span>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-sm font-500'>{props.song.name}</span>
+                <span className='color-text-sec dark:color-text-dark-sec font-size-xs'>{props.song.album}</span>
             </div>
         </Card>
     );

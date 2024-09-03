@@ -35,7 +35,8 @@ export default defineConfig({
                 dark: {
                     pri: '#1a1a1a',
                     sec: '#1f1f1f',
-                    ter: '#292929'
+                    ter: '#292929',
+                    mica: '#23292e'
                 }
             },
             fg: {

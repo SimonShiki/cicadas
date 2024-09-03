@@ -83,7 +83,7 @@ export default function SonglistPage () {
     return (
         <main className='flex flex-col h-[calc(100vh-100px)]'>
             <div className='flex flex-col gap-4 pl-2 pt-4 pb-4'>
-                <span className='color-text-pri font-size-3xl font-500'>
+                <span className='color-text-pri dark:color-text-dark-pri font-size-3xl font-500'>
                     <FormattedMessage defaultMessage='Songlists' />
                 </span>
                 <div className='flex flex-row items-center gap-4'>
@@ -153,7 +153,7 @@ export default function SonglistPage () {
                                     <Button onClick={handleRandomPlay} variant='primary' className='mr-auto flex flex-row gap-2 items-center'><span className='i-fluent:arrow-shuffle-20-regular w-5 h-5' />
                                         <FormattedMessage defaultMessage='Random' />
                                     </Button>
-                                    <span className='color-text-pri font-size-sm'>
+                                    <span className='color-text-pri dark:color-text-dark-pri font-size-sm'>
                                         <FormattedMessage defaultMessage='Sort By:' />
                                     </span>
                                     <Select position='left' options={sortOptions} onChange={option => {
