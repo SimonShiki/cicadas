@@ -58,6 +58,7 @@ export default function NowPlaying () {
     }, [globalFullscreen]);
 
     const handleChangePlayProgress = useCallback(async (value: number) => {
+        if (!song?.duration) return;
         const actualElapsedSecs = value * song!.duration! / 100000;
         await player.setProgress(actualElapsedSecs);
     }, [song]);

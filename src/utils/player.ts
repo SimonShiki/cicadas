@@ -175,7 +175,7 @@ function setupEventListeners () {
     sharedStore.sub(progressJotai, () => {
         const progress = sharedStore.get(progressJotai);
         const currentSong = sharedStore.get(currentSongJotai);
-        if (!currentSong || !currentSong.duration) return;
+        if (!currentSong?.duration) return;
         const percentage = Math.ceil(progress / currentSong.duration * 100000);
         if (prevProgress !== percentage) {
             prevProgress = percentage;
