@@ -56,7 +56,9 @@ impl CacheManager {
                         let item = CacheItem {
                             path: entry.path(),
                             size: metadata.len(),
-                            last_accessed: metadata.modified().unwrap_or_else(|_| std::time::SystemTime::now()),
+                            last_accessed: metadata
+                                .modified()
+                                .unwrap_or_else(|_| std::time::SystemTime::now()),
                         };
 
                         current_size += item.size;

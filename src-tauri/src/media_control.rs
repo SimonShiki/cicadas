@@ -1,9 +1,9 @@
+use crate::error::AppError;
 use serde::Deserialize;
 use souvlaki::{MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
 use std::sync::{Arc, Mutex, Once};
 use tauri::Emitter;
 use tauri::State;
-use crate::error::AppError;
 
 type Result<T> = std::result::Result<T, AppError>;
 
@@ -19,36 +19,38 @@ impl From<souvlaki::Error> for AppError {
 }
 
 #[tauri::command]
-pub async fn init_media_controls(app: tauri::AppHandle, window: tauri::Window, state: State<'_, MediaControlState>) -> Result<()> {
+pub async fn init_media_controls(
+    app: tauri::AppHandle,
+    window: tauri::Window,
+    state: State<'_, MediaControlState>,
+) -> Result<()> {
     state.init_once.call_once(|| {
         let handle = window.hwnd().unwrap();
         let hwnd_pointer = Some(handle.0 as _);
         let config = PlatformConfig {
             dbus_name: "cicadas",
             display_name: "Cicadas",
-            hwnd: hwnd_pointer
+            hwnd: hwnd_pointer,
         };
 
         if let Ok(mut controls) = MediaControls::new(config) {
-            if let Ok(()) = controls.attach(move |event| {
-                match event {
-                    souvlaki::MediaControlEvent::Play => {
-                        let _ = app.emit("media-control", "play");
-                    }
-                    souvlaki::MediaControlEvent::Pause => {
-                        let _ = app.emit("media-control", "pause");
-                    }
-                    souvlaki::MediaControlEvent::Toggle => {
-                        let _ = app.emit("media-control", "toggle");
-                    }
-                    souvlaki::MediaControlEvent::Next => {
-                        let _ = app.emit("media-control", "next");
-                    }
-                    souvlaki::MediaControlEvent::Previous => {
-                        let _ = app.emit("media-control", "previous");
-                    }
-                    _ => {}
+            if let Ok(()) = controls.attach(move |event| match event {
+                souvlaki::MediaControlEvent::Play => {
+                    let _ = app.emit("media-control", "play");
                 }
+                souvlaki::MediaControlEvent::Pause => {
+                    let _ = app.emit("media-control", "pause");
+                }
+                souvlaki::MediaControlEvent::Toggle => {
+                    let _ = app.emit("media-control", "toggle");
+                }
+                souvlaki::MediaControlEvent::Next => {
+                    let _ = app.emit("media-control", "next");
+                }
+                souvlaki::MediaControlEvent::Previous => {
+                    let _ = app.emit("media-control", "previous");
+                }
+                _ => {}
             }) {
                 *state.media_controls.lock().unwrap() = Some(controls);
             }
@@ -59,7 +61,10 @@ pub async fn init_media_controls(app: tauri::AppHandle, window: tauri::Window, s
 }
 
 #[tauri::command]
-pub async fn update_media_metadata(state: State<'_, MediaControlState>, metadata: MediaMetadataInput) -> Result<()> {
+pub async fn update_media_metadata(
+    state: State<'_, MediaControlState>,
+    metadata: MediaMetadataInput,
+) -> Result<()> {
     if let Some(controls) = &mut *state.media_controls.lock().unwrap() {
         let mut media_metadata = MediaMetadata::default();
         media_metadata.title = Some(&metadata.title);
@@ -73,7 +78,10 @@ pub async fn update_media_metadata(state: State<'_, MediaControlState>, metadata
 }
 
 #[tauri::command]
-pub async fn update_playback_status(state: State<'_, MediaControlState>, is_playing: bool) -> Result<()> {
+pub async fn update_playback_status(
+    state: State<'_, MediaControlState>,
+    is_playing: bool,
+) -> Result<()> {
     if let Some(controls) = &mut *state.media_controls.lock().unwrap() {
         let status = if is_playing {
             MediaPlayback::Playing { progress: None }

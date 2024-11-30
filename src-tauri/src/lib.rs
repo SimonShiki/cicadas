@@ -1,16 +1,16 @@
 mod audio;
-mod media_control;
+mod cache_manager;
 mod error;
 mod local_scanner;
-mod cache_manager;
+mod media_control;
 
 use audio::AudioState;
 use cache_manager::{CacheManager, CacheManagerState};
 use media_control::MediaControlState;
 use rodio::OutputStream;
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Condvar, Mutex, Once};
 use tauri::{image::Image, Emitter, Manager};
-use std::sync::atomic::AtomicBool;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -34,6 +34,11 @@ pub async fn run() {
     };
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            let _ = app.get_webview_window("main")
+                       .expect("no main window")
+                       .set_focus();
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
@@ -45,38 +50,40 @@ pub async fn run() {
             app.manage(CacheManagerState(cache_manager));
 
             let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
-            let pause_resume = MenuItemBuilder::with_id("pause_resume", "Pause/Resume").build(app)?;
+            let pause_resume =
+                MenuItemBuilder::with_id("pause_resume", "Pause/Resume").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
-            let menu = MenuBuilder::new(app).items(&[&show, &pause_resume, &quit]).build()?;
+            let menu = MenuBuilder::new(app)
+                .items(&[&show, &pause_resume, &quit])
+                .build()?;
 
             let _tray = TrayIconBuilder::new()
                 .title("Cicadas")
                 .tooltip("Cicadas")
-                .icon(Image::from_path("./icons/32x32.png")?)  // Set the icon using the resolved path
+                .icon(Image::from_path("./icons/32x32.png")?) // Set the icon using the resolved path
                 .menu(&menu)
-                .on_menu_event(move |app, event| {
-                    match event.id().as_ref() {
-                        "show" => {
-                            if let Some(window) = app.get_webview_window("main") {
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
+                .on_menu_event(move |app, event| match event.id().as_ref() {
+                    "show" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
                         }
-                        "pause_resume" => {
-                            let _ = app.emit("media-control", "toggle");
-                        }
-                        "quit" => {
-                            std::process::exit(0);
-                        }
-                        _ => (),
                     }
+                    "pause_resume" => {
+                        let _ = app.emit("media-control", "toggle");
+                    }
+                    "quit" => {
+                        std::process::exit(0);
+                    }
+                    _ => (),
                 })
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
                         ..
-                    } = event {
+                    } = event
+                    {
                         let app = tray.app_handle();
                         if let Some(window) = app.get_webview_window("main") {
                             let _ = window.show();

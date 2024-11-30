@@ -39,3 +39,6 @@ walkdir = "2.5.0"
 num_cpus = "1.16.0"
 lofty = "0.21.0"
 base64 = "0.22.1"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
