@@ -112,10 +112,16 @@ export default function NowPlaying () {
             </div>
             {(localFullscreen || isAnimating) && (
                 <div
-                    className={`translate-z-0 absolute top-0 left-0 w-full h-full ms-bezier bg-cover animate-duration-300 ${localFullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
-                    style={{ backgroundImage: `url("${song.cover}")` }}
+                    className={`translate-z-0 absolute top-0 left-0 w-full h-full ms-bezier animate-duration-300 overflow-hidden ${localFullscreen ? 'animate-slide-in-up' : 'animate-slide-out-down'}`}
                 >
-                    <div className='w-full h-full translate-z-0 backdrop-filter backdrop-blur-256 bg-black bg-op-40 flex flex-col items-center justify-center'>
+                    <div 
+                        className='absolute inset-[-10px] bg-cover blur-96 scale-180'
+                        style={{ backgroundImage: `url("${song.cover}")` }}
+                    />
+                    <div 
+                        className='absolute inset-0 bg-black bg-op-40'
+                    />
+                    <div className='relative w-full h-full flex flex-col items-center justify-center'>
                         <div className='flex gap-12'>
                             <img draggable={false} src={song.cover} className='shadow-md border-outline-pri rounded-md w-30vw lg:w-80 object-cover aspect-square' />
                             {song.lyrics && <Lyrics lyrics={song.lyrics} className='h-60 w-50vw max-w-50vw lg:w-120 lg:max-w-120 overflow-x-hidden' />}
