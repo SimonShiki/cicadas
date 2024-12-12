@@ -10,7 +10,7 @@ import { focusAtom } from 'jotai-optics';
 import Spinner from '../components/base/spinner';
 import * as player from '../utils/player';
 import { useCallback, useEffect, useState } from 'react';
-import { filterSongList, SortOptions, sortSongList } from '../utils/sort';
+import { filterSongList, sortSongList } from '../utils/sort';
 import { nowPlayingBarJotai } from '../jotais/play';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { sortOptionJotai } from '../jotais/settings';
