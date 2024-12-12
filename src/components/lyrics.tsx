@@ -16,7 +16,7 @@ export default function Lyrics ({lyrics, className = ''}: LyricsProps) {
     const [prevHighlight, setPrevHighlight] = useState(0);
     const [lastScrolled, setLastScrolled] = useState(-1001);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
-    const scrollTimeoutRef = useRef<number>();
+    const scrollTimeoutRef = useRef<number>(0);
     const isScrollingRef = useRef(false);
 
     useEffect(() => {
