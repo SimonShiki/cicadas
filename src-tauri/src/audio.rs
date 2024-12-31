@@ -6,9 +6,9 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
-use tauri::{Emitter, State};
-
-type Result<T> = std::result::Result<T, AppError>;
+use tauri::{Runtime, State, Emitter};
+use reqwest;
+use futures_util::StreamExt;
 
 pub struct AudioState {
     pub sink: Arc<Mutex<Option<Sink>>>,
@@ -198,91 +198,84 @@ impl Source for StreamingSource {
 }
 
 #[tauri::command]
-pub async fn start_streaming(audio_state: State<'_, AudioState>) -> Result<()> {
-    // Terminate the current sink if it exists
-    let mut sink_guard = audio_state.sink.lock().unwrap();
-    if let Some(old_sink) = sink_guard.take() {
-        old_sink.stop();
+pub async fn play_url_stream<R: Runtime>(
+    _app: tauri::AppHandle<R>,
+    state: State<'_, AudioState>, 
+    url: String
+) -> std::result::Result<(), AppError> {
+    // Create HTTP client first
+    let client = reqwest::Client::new();
+    let response = client.get(&url)
+        .send()
+        .await
+        .map_err(|e| AppError::NetworkError(e.to_string()))?;
+
+    // Get data after response is received
+    let mut sink_guard = state.sink.lock().unwrap();
+    if let Some(sink) = sink_guard.take() {
+        sink.stop();
     }
 
-    // Reset the buffer and stream end flag
+    // Reset stream state
     {
-        let mut buffer = audio_state.buffer.lock().unwrap();
+        let mut buffer = state.buffer.lock().unwrap();
         buffer.clear();
-        audio_state.is_stream_ended.store(false, Ordering::Relaxed);
+        state.is_stream_ended.store(false, Ordering::Relaxed);
     }
+    *state.decoder.lock().unwrap() = None;
 
-    // Reset the decoder
-    *audio_state.decoder.lock().unwrap() = None;
-
-    // Create a new sink
-    let new_sink = Sink::try_new(&audio_state.stream_handle)
+    // Create new sink with streaming source
+    let sink = Sink::try_new(&state.stream_handle)
         .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
 
-    // Create and append the StreamingSource
     let streaming_source = StreamingSource::new(
-        audio_state.buffer.clone(),
-        audio_state.is_stream_ended.clone(),
-        audio_state.decoder.clone(),
-        audio_state.data_available.clone(),
+        state.buffer.clone(),
+        state.is_stream_ended.clone(),
+        state.decoder.clone(),
+        state.data_available.clone(),
     );
-    new_sink.append(streaming_source);
-
-    // Store the new sink
-    *sink_guard = Some(new_sink);
-
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn add_stream_chunk(audio_state: State<'_, AudioState>, chunk: Vec<u8>) -> Result<()> {
-    let mut buffer = audio_state.buffer.lock().unwrap();
-    buffer.extend_from_slice(&chunk);
-
-    // Signal that new data is available
-    let (lock, cvar) = &*audio_state.data_available;
-    let mut available = lock.lock().unwrap();
-    *available = true;
-    cvar.notify_one();
-
-    // Start playing if this is the first chunk
-    if buffer.len() == chunk.len() {
-        drop(buffer); // Release the lock before calling play()
-        if let Some(sink) = audio_state.sink.lock().unwrap().as_ref() {
-            sink.play();
+    sink.append(streaming_source);
+    
+    // Start background streaming task
+    let buffer = state.buffer.clone();
+    let is_stream_ended = state.is_stream_ended.clone();
+    let data_available = state.data_available.clone();
+    
+    tokio::spawn(async move {
+        let mut bytes_stream = response.bytes_stream();
+        while let Some(chunk) = bytes_stream.next().await {
+            if let Ok(data) = chunk {
+                let mut buffer = buffer.lock().unwrap();
+                buffer.extend_from_slice(&data);
+                
+                // Signal new data available
+                let (lock, cvar) = &*data_available;
+                let mut available = lock.lock().unwrap();
+                *available = true;
+                cvar.notify_one();
+            }
         }
-    }
+        is_stream_ended.store(true, Ordering::Relaxed);
+    });
+
+    sink.play();
+    *sink_guard = Some(sink);
 
     Ok(())
 }
 
 #[tauri::command]
-pub async fn end_stream(audio_state: State<'_, AudioState>) -> Result<()> {
-    audio_state.is_stream_ended.store(true, Ordering::Relaxed);
-
-    // Signal that the stream has ended
-    let (lock, cvar) = &*audio_state.data_available;
-    let mut available = lock.lock().unwrap();
-    *available = true;
-    cvar.notify_one();
-
-    Ok(())
-}
-
-impl From<rodio::decoder::DecoderError> for AppError {
-    fn from(error: rodio::decoder::DecoderError) -> Self {
-        AppError::DecodeError(error.to_string())
-    }
-}
-
-#[tauri::command]
-pub async fn play_local_file(audio_state: State<'_, AudioState>, file_path: String) -> Result<()> {
+pub async fn play_local_file<R: Runtime>(
+    _app: tauri::AppHandle<R>, // Add app parameter for consistency
+    state: State<'_, AudioState>, 
+    file_path: String
+) -> std::result::Result<(), AppError> {
     let path = Path::new(&file_path);
     if !path.exists() {
         return Err(AppError::FileNotFound(file_path));
     }
 
-    let mut sink_guard = audio_state.sink.lock().unwrap();
+    let mut sink_guard = state.sink.lock().unwrap();
     if let Some(sink) = sink_guard.take() {
         sink.stop();
     }
@@ -292,7 +285,7 @@ pub async fn play_local_file(audio_state: State<'_, AudioState>, file_path: Stri
 
     let source = Decoder::new(buf_reader).map_err(|e| AppError::DecodeError(e.to_string()))?;
 
-    let sink = Sink::try_new(&audio_state.stream_handle)
+    let sink = Sink::try_new(&state.stream_handle)
         .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
 
     sink.append(source);
@@ -303,44 +296,43 @@ pub async fn play_local_file(audio_state: State<'_, AudioState>, file_path: Stri
 }
 
 #[tauri::command]
-pub async fn play_arraybuffer(
-    app: tauri::AppHandle,
-    audio_state: State<'_, AudioState>,
+pub async fn play_arraybuffer<R: Runtime>(
+    app: tauri::AppHandle<R>,
+    state: State<'_, AudioState>,
     buffer: Vec<u8>,
-) -> Result<()> {
-    let mut sink_guard = audio_state.sink.lock().unwrap();
+) -> std::result::Result<(), AppError> {
+    let duration: u64;
+    {
+        // Clone buffer for first usage
+        let cursor = Cursor::new(buffer.clone());
+        let source = Decoder::new(cursor).map_err(|e| AppError::DecodeError(e.to_string()))?;
+        duration = source.total_duration()
+            .ok_or_else(|| AppError::DecodeError("Could not get duration".to_string()))?
+            .as_millis() as u64;
+    }
+
+    let mut sink_guard = state.sink.lock().unwrap();
     if let Some(sink) = sink_guard.take() {
         sink.stop();
     }
 
-    // Use a cursor to wrap the buffer and create a source from it
+    // Use original buffer here
     let cursor = Cursor::new(buffer);
-
-    // Decode the audio data from the buffer
     let source = Decoder::new(cursor).map_err(|e| AppError::DecodeError(e.to_string()))?;
-
-    // Create a new sink for playback
-    let sink = Sink::try_new(&audio_state.stream_handle)
+    let sink = Sink::try_new(&state.stream_handle)
         .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
 
-    // Report the actual duration
-    let _ = app.emit(
-        "update_duration",
-        source.total_duration().unwrap().as_millis(),
-    );
-
-    // Append the source to the sink
+    app.emit("update_duration", duration)?;
     sink.append(source);
-
-    // Replace the old sink with the new one
     *sink_guard = Some(sink);
 
     Ok(())
 }
 
+// Add explicit type parameters for all non-async commands
 #[tauri::command]
-pub async fn get_music_status(audio_state: State<'_, AudioState>) -> Result<String> {
-    let sink: std::sync::MutexGuard<Option<Sink>> = audio_state.sink.lock().unwrap();
+pub fn get_music_status(state: State<AudioState>) -> std::result::Result<String, AppError> {
+    let sink: std::sync::MutexGuard<Option<Sink>> = state.sink.lock().unwrap();
     Ok(match &*sink {
         Some(s) if s.is_paused() => "Paused".to_string(),
         Some(_) => "Playing".to_string(),
@@ -349,8 +341,8 @@ pub async fn get_music_status(audio_state: State<'_, AudioState>) -> Result<Stri
 }
 
 #[tauri::command]
-pub async fn pause(audio_state: State<'_, AudioState>) -> Result<()> {
-    let sink = audio_state.sink.lock().unwrap();
+pub fn pause(state: State<AudioState>) -> std::result::Result<(), AppError> {
+    let sink = state.sink.lock().unwrap();
     if let Some(s) = &*sink {
         s.pause();
         Ok(())
@@ -362,8 +354,8 @@ pub async fn pause(audio_state: State<'_, AudioState>) -> Result<()> {
 }
 
 #[tauri::command]
-pub async fn resume(audio_state: State<'_, AudioState>) -> Result<()> {
-    let sink = audio_state.sink.lock().unwrap();
+pub fn resume(state: State<AudioState>) -> std::result::Result<(), AppError> {
+    let sink = state.sink.lock().unwrap();
     if let Some(s) = &*sink {
         s.play();
         Ok(())
@@ -375,8 +367,8 @@ pub async fn resume(audio_state: State<'_, AudioState>) -> Result<()> {
 }
 
 #[tauri::command]
-pub async fn set_volume(audio_state: State<'_, AudioState>, volume: f32) -> Result<()> {
-    let sink = audio_state.sink.lock().unwrap();
+pub fn set_volume(state: State<AudioState>, volume: f32) -> std::result::Result<(), AppError> {
+    let sink = state.sink.lock().unwrap();
     if let Some(s) = &*sink {
         s.set_volume(volume);
         Ok(())
@@ -388,8 +380,8 @@ pub async fn set_volume(audio_state: State<'_, AudioState>, volume: f32) -> Resu
 }
 
 #[tauri::command]
-pub async fn get_volume(audio_state: State<'_, AudioState>) -> Result<f32> {
-    let sink = audio_state.sink.lock().unwrap();
+pub fn get_volume(state: State<AudioState>) -> std::result::Result<f32, AppError> {
+    let sink = state.sink.lock().unwrap();
     if let Some(s) = &*sink {
         Ok(s.volume())
     } else {
@@ -398,11 +390,8 @@ pub async fn get_volume(audio_state: State<'_, AudioState>) -> Result<f32> {
 }
 
 #[tauri::command]
-pub async fn set_playback_progress(
-    audio_state: State<'_, AudioState>,
-    progress: f32,
-) -> Result<()> {
-    let mut sink = audio_state.sink.lock().unwrap();
+pub fn set_playback_progress(state: State<AudioState>, progress: f32) -> std::result::Result<(), AppError> {
+    let mut sink = state.sink.lock().unwrap();
 
     if let Some(s) = sink.as_mut() {
         let duration = Duration::from_secs_f32(progress);
@@ -417,8 +406,8 @@ pub async fn set_playback_progress(
 }
 
 #[tauri::command]
-pub async fn get_playback_progress(audio_state: State<'_, AudioState>) -> Result<f32> {
-    let sink = audio_state.sink.lock().unwrap();
+pub fn get_playback_progress(state: State<AudioState>) -> std::result::Result<f32, AppError> {
+    let sink = state.sink.lock().unwrap();
 
     if let Some(s) = &*sink {
         Ok(s.get_pos().as_secs_f32())
@@ -428,8 +417,8 @@ pub async fn get_playback_progress(audio_state: State<'_, AudioState>) -> Result
 }
 
 #[tauri::command]
-pub async fn set_speed(audio_state: State<'_, AudioState>, speed: f32) -> Result<()> {
-    let sink = audio_state.sink.lock().unwrap();
+pub fn set_speed(state: State<AudioState>, speed: f32) -> std::result::Result<(), AppError> {
+    let sink = state.sink.lock().unwrap();
     if let Some(s) = &*sink {
         s.set_speed(speed);
         Ok(())

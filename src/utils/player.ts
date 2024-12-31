@@ -53,77 +53,47 @@ async function updatePlaybackStatus (isPlaying: boolean) {
     });
 }
 
-async function playCurrentSong () {
+export async function playCurrentSong () {
     const currentSong = sharedStore.get(currentSongJotai);
     const volume = sharedStore.get(volumeJotai);
     if (!currentSong) return;
+    
     pause();
     await updateMediaMetadata(currentSong);
     sharedStore.set(backendPlayingJotai, false);
     sharedStore.set(progressJotai, 0);
+
     if (currentSong.storage === 'local') {
         await invoke('play_local_file', { filePath: currentSong.path });
-        await invoke('set_volume', { volume: volumeToFactor(volume) });
-        sharedStore.set(bufferingJotai, false);
-        sharedStore.set(backendPlayingJotai, true);
     } else {
-        const storages = sharedStore.get(storagesJotai);
-        const targetStorage = storages[currentSong.storage];
         const { streaming } = sharedStore.get(settingsJotai);
         if (streaming) {
-            if (!targetStorage.instance.getMusicStream) {
-                throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicStream`);
+            const storages = sharedStore.get(storagesJotai);
+            const targetStorage = storages[currentSong.storage];
+            if (!targetStorage.instance.getMusicURL) {
+                throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicURL`);
             }
-            // Start streaming
-            if (sharedStore.get(streamingJotai)) {
-                await invoke('end_stream');
-            }
-
-            sharedStore.set(streamingJotai, true);
-            await invoke('start_streaming');
-            console.log('start streaming');
-            sharedStore.set(backendPlayingJotai, true);
-            await invoke('set_volume', { volume: volumeToFactor(volume) });
-
-            try {
-                const stream = targetStorage.instance.getMusicStream(currentSong.id);
-                let initChunk = false;
-                sharedStore.set(bufferingJotai, true);
-                for await (const chunk of stream) {
-                    const streaming = sharedStore.get(streamingJotai);
-                    if (!streaming) break;
-                    console.log('received chunk');
-                    await invoke('add_stream_chunk', { chunk: await transformChunk(chunk) });
-                    if (!initChunk) {
-                        initChunk = true;
-                        sharedStore.set(bufferingJotai, false);
-                    }
-                }
-            } catch (e) {
-                console.error('Error occurs when streaming', e);
-            } finally {
-                console.log('stream end');
-                await invoke('end_stream');
-                sharedStore.set(streamingJotai, false);
-            }
+            
+            const url = await targetStorage.instance.getMusicURL(currentSong.id);
+            sharedStore.set(bufferingJotai, true);
+            await invoke('play_url_stream', { url });
+            sharedStore.set(bufferingJotai, false);
         } else {
+            const storages = sharedStore.get(storagesJotai);
+            const targetStorage = storages[currentSong.storage];
             if (!targetStorage.instance.getMusicBuffer) {
                 throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicBuffer`);
             }
-
+            
             sharedStore.set(bufferingJotai, true);
             const buffer = await targetStorage.instance.getMusicBuffer(currentSong.id);
-            const buffering = sharedStore.get(bufferingJotai);
-            if (!buffering) {
-                console.warn('buffer interrupted');
-                return;
-            }
             await invoke('play_arraybuffer', { buffer });
-            await invoke('set_volume', { volume: volumeToFactor(volume) });
-            sharedStore.set(backendPlayingJotai, true);
             sharedStore.set(bufferingJotai, false);
         }
     }
+
+    await invoke('set_volume', { volume: volumeToFactor(volume) });
+    sharedStore.set(backendPlayingJotai, true);
     play();
 }
 

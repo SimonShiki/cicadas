@@ -104,9 +104,7 @@ pub async fn run() {
         .invoke_handler(tauri::generate_handler![
             audio::play_local_file,
             audio::play_arraybuffer,
-            audio::start_streaming,
-            audio::add_stream_chunk,
-            audio::end_stream,
+            audio::play_url_stream,
             audio::get_music_status,
             audio::pause,
             audio::resume,

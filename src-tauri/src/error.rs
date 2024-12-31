@@ -1,20 +1,41 @@
 use serde::Serialize;
-use thiserror::Error;
+use std::fmt::{Display, Formatter};
+use tauri::Error as TauriError;
 
-#[derive(Debug, Error, Serialize)]
-pub(crate) enum AppError {
-    #[error("File not found: {0}")]
+#[derive(Debug, Serialize)]
+pub enum AppError {
     FileNotFound(String),
-    #[error("Failed to open file: {0}")]
     FileOpenError(String),
-    #[error("Failed to decode file: {0}")]
     DecodeError(String),
-    #[error("Failed to create audio sink: {0}")]
     SinkCreationError(String),
-    #[error("Invalid operation: {0}")]
     InvalidOperation(String),
-    #[error("Failed to dispatch media control event: {0}")]
-    MediaControlsError(String),
-    #[error("Failed to seek source: {0}")]
     SeekError(String),
+    NetworkError(String),
+    MediaControlsError(String),
+    TauriError(String),  // Add this variant
+}
+
+impl std::error::Error for AppError {}
+
+impl Display for AppError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::FileNotFound(path) => write!(f, "File not found: {}", path),
+            AppError::FileOpenError(err) => write!(f, "Failed to open file: {}", err),
+            AppError::DecodeError(err) => write!(f, "Failed to decode audio: {}", err),
+            AppError::SinkCreationError(err) => write!(f, "Failed to create audio sink: {}", err),
+            AppError::InvalidOperation(err) => write!(f, "Invalid operation: {}", err),
+            AppError::SeekError(err) => write!(f, "Failed to seek: {}", err),
+            AppError::NetworkError(err) => write!(f, "Network error: {}", err),
+            AppError::MediaControlsError(err) => write!(f, "Media controls error: {}", err),
+            AppError::TauriError(err) => write!(f, "Tauri error: {}", err),
+        }
+    }
+}
+
+// Add From implementation for TauriError
+impl From<TauriError> for AppError {
+    fn from(error: TauriError) -> Self {
+        AppError::TauriError(error.to_string())
+    }
 }

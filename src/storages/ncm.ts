@@ -392,26 +392,12 @@ export class NCM implements AbstractStorage {
         this.scannedJotai = focusAtom(ncmStorageJotai, (optic) => optic.prop('scanned'));
     }
 
-    private async getMusicURL (id: number, quality = this.config.defaultQuality) {
+    async getMusicURL (id: number, quality = this.config.defaultQuality) {
         const res = await fetch(`${this.config.api}song/url/v1?id=${id}&level=${quality}${this.config.cookie ? `&cookie=${this.config.cookie}` : ''}`);
         const { data } = await res.json();
         const song = data[0];
         if (!song.url) throw new Error(`Cannot get url for ${id}:\n ${JSON.stringify(song)}`);
         return song.url as string;
-    }
-
-    async * getMusicStream (id: number, quality = this.config.defaultQuality) {
-        const url = await this.getMusicURL(id, quality);
-        const musicRes = await fetch(url);
-        if (!musicRes.body) {
-            throw new Error(`The music response has no body (${musicRes.status})`);
-        }
-        const reader = musicRes.body.getReader();
-        while (1) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            yield value;
-        }
     }
 
     async getMusicBuffer (id: number, quality = this.config.defaultQuality) {

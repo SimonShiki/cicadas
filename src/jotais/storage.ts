@@ -18,7 +18,7 @@ export interface Song<From extends string> {
 
 export interface AbstractStorage {
     scan(): Promise<void>;
-    getMusicStream?(id: string | number): AsyncGenerator<ArrayLike<unknown>, void, unknown>;
+    getMusicURL?(id: string | number): Promise<string>;
     getMusicBuffer?(id: string | number): Promise<number[]>;
 }
 
