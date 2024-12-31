@@ -29,7 +29,8 @@ export default function Lyrics ({lyrics, className = ''}: LyricsProps) {
         if (typeof parsedLyrics !== 'object') return false;
         const next = parsedLyrics.lines[index + 1];
         const line = parsedLyrics.lines[index];
-        return progress > line.time && progress < (next?.time ?? Infinity);
+        const lineEndTime = line.endTime ?? (next?.time ?? Infinity);
+        return progress >= line.time && progress < lineEndTime;
     }, [parsedLyrics, progress]);
 
     const scrollToIndex = useCallback((index: number) => {
@@ -70,26 +71,78 @@ export default function Lyrics ({lyrics, className = ''}: LyricsProps) {
         const line = parsedLyrics.lines[index];
         const highlight = shouldHighlight(index);
 
+        const renderContent = () => {
+            if (!line.wordTimes?.length) {
+                return line.content;
+            }
+
+            return line.wordTimes.map((word, i) => {
+                const isWordActive = highlight && progress >= word.time;
+                const isWordPlaying = highlight && progress >= word.time && progress < word.endTime;
+                // Consider words longer than 1 second as accented
+                const isAccent = word.duration && word.duration > 1000;
+                
+                // Calculate animation progress (0-1)
+                const playProgress = isWordPlaying && isAccent
+                    ? Math.min((progress - word.time) / (word.duration ?? Infinity), 1)
+                    : 0;
+                
+                // Ensure progressive highlighting
+                const prevWordsHighlighted = line.wordTimes!
+                    .slice(0, i)
+                    .every(prevWord => progress >= prevWord.time);
+                
+                const shouldHighlight = isWordActive && prevWordsHighlighted;
+
+                // Extract spaces to preserve word spacing while maintaining animations
+                const leadingSpaces = word.text.match(/^\s*/)?.[0] ?? '';
+                const trailingSpaces = word.text.match(/\s*$/)?.[0] ?? '';
+                const content = word.text.slice(leadingSpaces.length, word.text.length - trailingSpaces.length);
+
+                return (
+                    <span key={word.time}>
+                        {leadingSpaces && <span className="opacity-0">{leadingSpaces}</span>}
+                        <span 
+                            className={`
+                                inline-block transition-all duration-200
+                                ${shouldHighlight ? 'opacity-90' : 'opacity-20 blur-1'}
+                                ${isAccent ? 'transform-gpu' : ''}
+                            `}
+                            style={{
+                                transform: isAccent 
+                                    ? `translateY(${playProgress * 4}px)` 
+                                    : undefined,
+                                textShadow: isAccent && isWordPlaying
+                                    ? `0 0 ${playProgress * 8}px rgba(255,255,255,${playProgress * 0.5})`
+                                    : undefined
+                            }}
+                        >
+                            {content}
+                        </span>
+                        {trailingSpaces && <span className="opacity-0">{trailingSpaces}</span>}
+                    </span>
+                );
+            });
+        };
+
         return (
             <div 
                 className='flex flex-col my-2 *:text-pretty bg-white bg-op-0 hover:bg-op-20 transition-colors p-2 rounded-md' 
                 onClick={() => handleLineClick(line.time)}
             >
-                <span className={`color-white transition-all font-size-xl lg:font-size-2xl font-bold ${
-                    highlight ? 'opacity-90 font-size-2xl lg:font-size-3xl' : 'blur-1 opacity-20'
+                <div className={`color-white transition-all flex flex-col font-size-xl lg:font-size-2xl font-bold ${
+                    highlight ? 'opacity-90 font-size-2xl lg:font-size-3xl' : 'blur-1 opacity-60'
                 }`}>
-                    {line.content}
-                </span>
-                {line.translation && (
-                    <span className={`color-white transition-all font-size-sm font-600 ${
-                        highlight ? 'opacity-90 lg:font-size-lg' : 'blur-1 opacity-20'
-                    }`}>
-                        {line.translation}
-                    </span>
-                )}
+                    <div>{renderContent()}</div>
+                    {line.translation && (
+                        <div className={`font-size-sm lg:font-size-base font-semibold ${highlight ? 'opacity-90' : 'opacity-40'}`}>
+                            {line.translation}
+                        </div>
+                    )}
+                </div>
             </div>
         );
-    }, [parsedLyrics, shouldHighlight]);
+    }, [parsedLyrics, shouldHighlight, progress]);
 
     if (typeof parsedLyrics === 'string') {
         return (
