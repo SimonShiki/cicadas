@@ -9,8 +9,6 @@ import { useState, useCallback, useEffect } from 'react';
 import Slider from './base/slider';
 import Tooltip from './base/tooltip';
 import Lyrics from './lyrics';
-import { focusAtom } from 'jotai-optics';
-import { settingsJotai } from '../jotais/settings';
 import PlaylistTooltip from './playlist-tooltip';
 
 const playModeIconMap: Record<PlayMode, string> = {
@@ -30,8 +28,6 @@ function formatMilliseconds (ms: number): string {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-const streamingJotai = focusAtom(settingsJotai, (optic) => optic.prop('streaming'));
-
 export default function NowPlaying () {
     const [globalFullscreen, setGlobalFullscreen] = useAtom(nowPlayingPageJotai);
     const [localFullscreen, setLocalFullscreen] = useState(globalFullscreen);
@@ -42,7 +38,6 @@ export default function NowPlaying () {
     const song = useAtomValue(currentSongJotai);
     const progress = useAtomValue(progressJotai);
     const buffering = useAtomValue(bufferingJotai);
-    const streaming = useAtomValue(streamingJotai);
 
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -130,7 +125,7 @@ export default function NowPlaying () {
                             <div className='flex flex-row gap-6 items-center px-6'>
                                 <span className='color-outline-pri font-size-sm'>{formatMilliseconds(progress * 1000)}</span>
                                 <div className='w-full'>
-                                    <Slider value={Math.min(progress * 1000 / song.duration! * 100, 100)} disabled={buffering || (streaming && song.storage !== 'local')} onChange={handleChangePlayProgress} step={0.01} />
+                                    <Slider value={Math.min(progress * 1000 / song.duration! * 100, 100)} disabled={buffering} onChange={handleChangePlayProgress} step={0.01} />
                                 </div>
                                 <span className='color-outline-pri font-size-sm'>{formatMilliseconds(song.duration!)}</span>
                             </div>

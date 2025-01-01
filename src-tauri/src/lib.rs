@@ -10,6 +10,7 @@ use media_control::MediaControlState;
 use rodio::OutputStream;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Condvar, Mutex, Once};
+use std::time::Duration;
 use tauri::{image::Image, Emitter, Manager};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
@@ -27,6 +28,9 @@ pub async fn run() {
         is_stream_ended: Arc::new(AtomicBool::new(false)),
         decoder: Arc::new(Mutex::new(None)),
         data_available: Arc::new((Mutex::new(false), Condvar::new())),
+        seek_target: Arc::new(Mutex::new(None)),
+        buffered_duration: Arc::new(Mutex::new(Duration::from_secs(0))),
+        progress_tx: Arc::new(Mutex::new(None)),
     };
     let media_control_state = MediaControlState {
         media_controls: Arc::new(Mutex::new(None)),
@@ -103,7 +107,6 @@ pub async fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             audio::play_local_file,
-            audio::play_arraybuffer,
             audio::play_url_stream,
             audio::get_music_status,
             audio::pause,
@@ -118,8 +121,6 @@ pub async fn run() {
             media_control::update_playback_status,
             local_scanner::get_song_buffer,
             local_scanner::scan_folder,
-            cache_manager::get_cached_song,
-            cache_manager::cache_song,
             cache_manager::get_cache_size,
             cache_manager::clear_cache,
         ])

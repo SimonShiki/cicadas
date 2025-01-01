@@ -21,4 +21,3 @@ export const currentSongJotai = focusAtom(nowPlayingJotai, (optic) => optic.prop
 export const playingJotai = focusAtom(nowPlayingJotai, (optic) => optic.prop('playing'));
 export const volumeJotai = atomWithStorage('volume', 1);
 export const bufferingJotai = atom(false);
-export const streamingJotai = atom(false);

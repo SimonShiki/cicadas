@@ -1,14 +1,12 @@
 import { focusAtom } from 'jotai-optics';
 import { StorageConfig, storagesConfigJotai } from '../jotais/settings';
 import sharedStore from '../jotais/shared-store';
-import { AbstractStorage, Song, storagesJotai } from '../jotais/storage';
+import { RemoteStorage, Song, storagesJotai } from '../jotais/storage';
 import { mergeDeep } from '../utils/merge-deep';
 import type { SetStateAction, WritableAtom } from 'jotai';
 import { backendStorage } from '../utils/local-utitity';
-import { fetchBuffer } from '../utils/chunk-transformer';
 import { currentSongJotai } from '../jotais/play';
 import { mergeLyrics } from '../utils/lyric-parser';
-import { cacheSong, getCachedSong } from '../utils/cache.';
 
 interface NCMSearchResult {
     id: number;
@@ -282,7 +280,7 @@ const defaultConfig: NCMConfig = {
     syncSonglist: false
 };
 
-export class NCM implements AbstractStorage {
+export class NCM implements RemoteStorage {
     private ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm')) as unknown as WritableAtom<NCMConfig, [SetStateAction<NCMConfig>], void>;
     private songlistJotai?: WritableAtom<Song<'ncm'>[], [Song<'ncm'>[]], void>;
     private scannedJotai?: WritableAtom<boolean, boolean[], void>;
@@ -398,15 +396,6 @@ export class NCM implements AbstractStorage {
         const song = data[0];
         if (!song.url) throw new Error(`Cannot get url for ${id}:\n ${JSON.stringify(song)}`);
         return song.url as string;
-    }
-
-    async getMusicBuffer (id: number, quality = this.config.defaultQuality) {
-        const cached = await getCachedSong(id);
-        if (cached) return cached;
-        const url = await this.getMusicURL(id, quality);
-        const buffer = await fetchBuffer(url);
-        cacheSong(id, buffer);
-        return buffer;
     }
 
     async search (keyword: string, limit = 10, page = 1) {

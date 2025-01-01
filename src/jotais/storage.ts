@@ -18,13 +18,17 @@ export interface Song<From extends string> {
 
 export interface AbstractStorage {
     scan(): Promise<void>;
-    getMusicURL?(id: string | number): Promise<string>;
-    getMusicBuffer?(id: string | number): Promise<number[]>;
 }
+
+export interface RemoteStorage extends AbstractStorage {
+    getMusicURL(id: string | number): Promise<string>;
+}
+
+type StorageInstance = Local | RemoteStorage
 
 export interface StorageMeta {
     identifer: string;
-    instance: AbstractStorage;
+    instance: StorageInstance;
     scanned: boolean;
     songList: Song<StorageMeta['identifer']>[];
 }

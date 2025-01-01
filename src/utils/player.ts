@@ -1,10 +1,8 @@
 import { listen } from '@tauri-apps/api/event';
-import { nowPlayingJotai, playlistJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai, streamingJotai, bufferingJotai } from '../jotais/play';
+import { nowPlayingJotai, playlistJotai, currentSongJotai, playingJotai, PlayMode, backendPlayingJotai, playModeJotai, progressJotai, volumeJotai, bufferingJotai } from '../jotais/play';
 import sharedStore from '../jotais/shared-store';
 import { Song, storagesJotai } from '../jotais/storage';
 import { invoke } from '@tauri-apps/api/core';
-import { settingsJotai } from '../jotais/settings';
-import { transformChunk } from './chunk-transformer';
 import { focusAtom } from 'jotai-optics';
 import { WritableAtom } from 'jotai';
 import { SetStateAction } from 'react';
@@ -13,6 +11,30 @@ import { ProgressBarStatus } from '@tauri-apps/api/window';
 
 type MediaControlPayload = 'play' | 'pause' | 'toggle' | 'next' | 'previous';
 type UpdateDurationPayload = number;
+
+interface BufferUpdatePayload {
+    type: 'BufferUpdate';
+    data: {
+        bufferProgress: number;
+    }
+}
+
+interface BufferSeekingPayload {
+    type: 'BufferSeeking';
+}
+
+interface BufferSeekReadyPayload {
+    type: 'BufferSeekReady';
+}
+
+interface UpdateProgressPayload {
+    type: 'UpdateProgress';
+    data: {
+        progress: number;
+    }
+}
+
+type PlaybackPayload = BufferUpdatePayload | BufferSeekingPayload | BufferSeekReadyPayload | UpdateProgressPayload;
 
 async function initializeMediaControls () {
     try {
@@ -66,30 +88,15 @@ export async function playCurrentSong () {
     if (currentSong.storage === 'local') {
         await invoke('play_local_file', { filePath: currentSong.path });
     } else {
-        const { streaming } = sharedStore.get(settingsJotai);
-        if (streaming) {
-            const storages = sharedStore.get(storagesJotai);
-            const targetStorage = storages[currentSong.storage];
-            if (!targetStorage.instance.getMusicURL) {
-                throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicURL`);
-            }
-            
-            const url = await targetStorage.instance.getMusicURL(currentSong.id);
-            sharedStore.set(bufferingJotai, true);
-            await invoke('play_url_stream', { url });
-            sharedStore.set(bufferingJotai, false);
-        } else {
-            const storages = sharedStore.get(storagesJotai);
-            const targetStorage = storages[currentSong.storage];
-            if (!targetStorage.instance.getMusicBuffer) {
-                throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicBuffer`);
-            }
-            
-            sharedStore.set(bufferingJotai, true);
-            const buffer = await targetStorage.instance.getMusicBuffer(currentSong.id);
-            await invoke('play_arraybuffer', { buffer });
-            sharedStore.set(bufferingJotai, false);
+        const storages = sharedStore.get(storagesJotai);
+        const targetStorage = storages[currentSong.storage];
+        if (!('getMusicURL' in targetStorage.instance)) {
+            throw new Error(`storage ${currentSong.storage} doesn't implemented getMusicURL`);
         }
+            
+        const url = await targetStorage.instance.getMusicURL(currentSong.id);
+        sharedStore.set(bufferingJotai, true);
+        await invoke('play_url_stream', { url });
     }
 
     await invoke('set_volume', { volume: volumeToFactor(volume) });
@@ -124,6 +131,38 @@ function setupEventListeners () {
 
         const durationJotai = focusAtom(currentSongJotai as WritableAtom<Song<string>, [SetStateAction<Song<string>>], void>, (optic) => optic.prop('duration'));
         sharedStore.set(durationJotai, e.payload);
+    });
+
+    listen<PlaybackPayload>('playback_event', (event) => {
+        const { payload } = event;
+        switch (payload.type) {
+        case 'BufferUpdate':
+            if (sharedStore.get(bufferingJotai)) {
+                sharedStore.set(bufferingJotai, false);
+            }
+
+            if (payload.data.bufferProgress !== undefined) {
+                // TODO: update buffer progress
+            }
+            break;
+        case 'BufferSeeking':
+            sharedStore.set(bufferingJotai, true);
+            break;
+        case 'BufferSeekReady': {
+            const currentSong = sharedStore.get(currentSongJotai);
+            if (!currentSong) return;
+                    
+            play();
+            sharedStore.set(bufferingJotai, false);
+            break;
+        }
+        case 'UpdateProgress':
+            if (payload.data?.progress !== undefined) {
+                sharedStore.set(progressJotai, payload.data.progress);
+            }
+            checkSongProgress();
+            break;
+        }
     });
 
     let prevSongId: string | number = -1;
@@ -168,20 +207,6 @@ function setupEventListeners () {
         }
     });
 
-    sharedStore.sub(playingJotai, () => {
-        const playing = sharedStore.get(playingJotai);
-        if (playing) {
-            const intervalId = setInterval(async () => {
-                if (!sharedStore.get(playingJotai) || !sharedStore.get(backendPlayingJotai)) {
-                    clearInterval(intervalId);
-                } else {
-                    await updateProgress();
-                    checkSongProgress();
-                }
-            }, 100);
-        }
-    });
-
     sharedStore.sub(volumeJotai, async () => {
         const volume = sharedStore.get(volumeJotai);
         await invoke('set_volume', { volume: volumeToFactor(volume) });
@@ -204,15 +229,6 @@ function factorToVolume (amplitude: number) {
 }
 
 let replayCurrentSong = false;
-
-async function updateProgress () {
-    try {
-        const progress = await invoke<number>('get_playback_progress');
-        sharedStore.set(progressJotai, progress);
-    } catch (e) {
-        console.error('Failed to get playback progress:', e);
-    }
-}
 
 async function checkSongProgress () {
     const { song, playing } = sharedStore.get(nowPlayingJotai);

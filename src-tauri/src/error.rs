@@ -1,6 +1,7 @@
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
 use tauri::Error as TauriError;
+use reqwest::Error as ReqwestError;
 
 #[derive(Debug, Serialize)]
 pub enum AppError {
@@ -37,5 +38,12 @@ impl Display for AppError {
 impl From<TauriError> for AppError {
     fn from(error: TauriError) -> Self {
         AppError::TauriError(error.to_string())
+    }
+}
+
+// Add From implementation for ReqwestError
+impl From<ReqwestError> for AppError {
+    fn from(error: ReqwestError) -> Self {
+        AppError::NetworkError(error.to_string())
     }
 }

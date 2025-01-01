@@ -1,4 +1,6 @@
 use crate::error::AppError;
+use lofty::file::AudioFile;
+use lofty::probe::Probe;
 use rodio::{Decoder, OutputStreamHandle, Sink, Source};
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Seek, SeekFrom};
@@ -9,6 +11,15 @@ use std::time::Duration;
 use tauri::{Runtime, State, Emitter};
 use reqwest;
 use futures_util::StreamExt;
+use tokio::sync::mpsc;
+
+#[derive(Clone, serde::Serialize)]
+#[serde(tag = "type", content = "data")]
+pub enum PlaybackEvent {
+    BufferUpdate { buffer_progress: f32 },
+    BufferSeekReady,
+    UpdateProgress { progress: f32 },
+}
 
 pub struct AudioState {
     pub sink: Arc<Mutex<Option<Sink>>>,
@@ -17,6 +28,9 @@ pub struct AudioState {
     pub is_stream_ended: Arc<AtomicBool>,
     pub decoder: Arc<Mutex<Option<Decoder<Cursor<Vec<u8>>>>>>,
     pub data_available: Arc<(Mutex<bool>, Condvar)>,
+    pub seek_target: Arc<Mutex<Option<Duration>>>,
+    pub buffered_duration: Arc<Mutex<Duration>>,
+    pub progress_tx: Arc<Mutex<Option<mpsc::Sender<PlaybackEvent>>>>,
 }
 
 struct StreamingSource {
@@ -25,6 +39,8 @@ struct StreamingSource {
     decoder: Arc<Mutex<Option<Decoder<Cursor<Vec<u8>>>>>>,
     position: usize,
     data_available: Arc<(Mutex<bool>, Condvar)>,
+    sample_rate: u32,
+    channels: u16,
 }
 
 impl StreamingSource {
@@ -40,6 +56,8 @@ impl StreamingSource {
             decoder,
             position: 0,
             data_available,
+            sample_rate: 44100,
+            channels: 2,
         }
     }
 
@@ -49,23 +67,38 @@ impl StreamingSource {
     }
 
     fn try_seek(&mut self, pos: Duration) -> std::result::Result<(), rodio::source::SeekError> {
-        let sample_rate = self.sample_rate() as f64;
-        let target_sample = (pos.as_secs_f64() * sample_rate) as usize;
+        let buffer = self.buffer.lock().unwrap();
+        
+        // Create a temporary decoder to get accurate audio parameters
+        if let Ok(temp_decoder) = Decoder::new(Cursor::new(buffer.clone())) {
+            self.sample_rate = temp_decoder.sample_rate();
+            self.channels = temp_decoder.channels();
+            
+            // Calculate bytes per second (2 bytes per sample)
+            let bytes_per_second = self.sample_rate as f64 * self.channels as f64 * 2.0;
+            let target_position = (pos.as_secs_f64() * bytes_per_second / 7.3475) as usize;
+            
+            if target_position >= buffer.len() {
+                return Err(rodio::source::SeekError::NotSupported {
+                    underlying_source: "position beyond buffer",
+                });
+            }
 
-        let total_samples = {
-            let buffer = self.buffer.lock().unwrap();
-            buffer.len() / 4 // Assuming 16-bit stereo
-        }; // The lock is released here
-
-        if target_sample >= total_samples {
-            return Err(rodio::source::SeekError::NotSupported {
-                underlying_source: "streaming",
-            });
+            // Ensure position aligns with frame boundaries
+            let frame_size = self.channels as usize * 2;
+            self.position = target_position - (target_position % frame_size);
+            
+            // Create new decoder starting from target position
+            if let Ok(new_decoder) = Decoder::new(Cursor::new(buffer[self.position..].to_vec())) {
+                let mut decoder = self.decoder.lock().unwrap();
+                *decoder = Some(new_decoder);
+                return Ok(());
+            }
         }
-
-        self.position = target_sample * 4;
-        self.reset();
-        Ok(())
+        
+        Err(rodio::source::SeekError::NotSupported {
+            underlying_source: "decoder creation failed",
+        })
     }
 }
 
@@ -140,7 +173,11 @@ impl Iterator for StreamingSource {
                 drop(buffer);
 
                 let mut decoder = self.decoder.lock().unwrap();
-                *decoder = Decoder::new(Cursor::new(new_buffer)).ok();
+                if let Ok(new_decoder) = Decoder::new(Cursor::new(new_buffer)) {
+                    self.sample_rate = new_decoder.sample_rate();
+                    self.channels = new_decoder.channels();
+                    *decoder = Some(new_decoder);
+                }
             } else if self.is_stream_ended.load(Ordering::Relaxed) {
                 return None;
             } else {
@@ -167,21 +204,11 @@ impl Source for StreamingSource {
     }
 
     fn channels(&self) -> u16 {
-        self.decoder
-            .lock()
-            .unwrap()
-            .as_ref()
-            .map(|d| d.channels())
-            .unwrap_or(2)
+        self.channels
     }
 
     fn sample_rate(&self) -> u32 {
-        self.decoder
-            .lock()
-            .unwrap()
-            .as_ref()
-            .map(|d| d.sample_rate())
-            .unwrap_or(44100)
+        self.sample_rate
     }
 
     fn total_duration(&self) -> Option<Duration> {
@@ -197,67 +224,206 @@ impl Source for StreamingSource {
     }
 }
 
+fn spawn_progress_task<R: Runtime>(
+    sink_ref: Arc<Mutex<Option<Sink>>>,
+    tx: mpsc::Sender<PlaybackEvent>,
+    _app: tauri::AppHandle<R>,
+) {
+    tokio::spawn(async move {
+        loop {
+            let progress = {
+                let guard = sink_ref.lock().unwrap();
+                if let Some(sink) = guard.as_ref() {
+                    if !sink.is_paused() {
+                        Some(sink.get_pos().as_secs_f32())
+                    } else {
+                        None
+                    }
+                } else {
+                    break;
+                }
+            };  // guard is dropped here
+
+            if let Some(progress) = progress {
+                let _ = tx.send(PlaybackEvent::UpdateProgress { progress }).await;
+            }
+
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    });
+}
+
 #[tauri::command]
 pub async fn play_url_stream<R: Runtime>(
-    _app: tauri::AppHandle<R>,
+    app: tauri::AppHandle<R>,
     state: State<'_, AudioState>, 
     url: String
 ) -> std::result::Result<(), AppError> {
-    // Create HTTP client first
-    let client = reqwest::Client::new();
-    let response = client.get(&url)
-        .send()
-        .await
-        .map_err(|e| AppError::NetworkError(e.to_string()))?;
+    // Stop and clean up previous playback instance
+    {
+        let sink = {
+            let mut sink_guard = state.sink.lock().unwrap();
+            sink_guard.take()
+        };
+        
+        if let Some(sink) = sink {
+            sink.stop();
+            // Wait briefly to ensure resource release
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    }
 
-    // Get data after response is received
+    // Clear buffer and reset state
+    {
+        let mut buffer = state.buffer.lock().unwrap();
+        buffer.clear();
+        state.is_stream_ended.store(false, Ordering::Relaxed);
+        *state.decoder.lock().unwrap() = None;
+        *state.seek_target.lock().unwrap() = None;
+        *state.buffered_duration.lock().unwrap() = Duration::from_secs(0);
+    }
+
+    let client = reqwest::Client::new();
+    
+    let content_length = client.get(&url)
+        .send()
+        .await?
+        .content_length()
+        .unwrap_or(0);
+
+    tokio::spawn({
+        let client = reqwest::Client::new();
+        let url = url.clone();
+        let app = app.clone();
+        
+        async move {
+            if let Ok(response) = client.get(&url)
+                .header("Range", "bytes=0-65535")
+                .send()
+                .await
+            {
+                if let Ok(chunk) = response.bytes().await {
+                    let cursor = std::io::Cursor::new(chunk);
+                    
+                    if let Ok(probe) = Probe::new(cursor).guess_file_type() {
+                        if let Ok(tagged_file) = probe.read() {
+                            let duration = if content_length > 0 {
+                                let chunk_duration = tagged_file.properties().duration().as_secs_f64();
+                                
+                                chunk_duration * 1000.0
+                            } else {
+                                0.0
+                            };
+                            
+                            let _ = app.emit("update_duration", duration);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Create a new request for streaming
+    let response = client.get(&url).send().await?;
+    
+    // Create event channel
+    let (tx, mut rx) = mpsc::channel(32);
+    let app_handle = app.clone();
+    
+    // Store sender for progress updates
+    *state.progress_tx.lock().unwrap() = Some(tx.clone());
+    
+    // Spawn event handler
+    tokio::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            let _ = app_handle.emit("playback_event", event);
+        }
+    });
+
+    // Start progress update task using the new helper function
+    spawn_progress_task(state.sink.clone(), tx.clone(), app.clone());
+
+    // Take ownership of necessary state
+    let buffer = state.buffer.clone();
+    let is_stream_ended = state.is_stream_ended.clone();
+    let data_available = state.data_available.clone();
+    let seek_target = state.seek_target.clone();
+    let buffered_duration = state.buffered_duration.clone();
+    let tx_clone = tx.clone();
+
+    // Initialize sink and source
     let mut sink_guard = state.sink.lock().unwrap();
     if let Some(sink) = sink_guard.take() {
         sink.stop();
     }
 
-    // Reset stream state
     {
-        let mut buffer = state.buffer.lock().unwrap();
+        let mut buffer = buffer.lock().unwrap();
         buffer.clear();
-        state.is_stream_ended.store(false, Ordering::Relaxed);
+        is_stream_ended.store(false, Ordering::Relaxed);
     }
     *state.decoder.lock().unwrap() = None;
 
-    // Create new sink with streaming source
     let sink = Sink::try_new(&state.stream_handle)
         .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
 
     let streaming_source = StreamingSource::new(
-        state.buffer.clone(),
-        state.is_stream_ended.clone(),
+        buffer.clone(),
+        is_stream_ended.clone(),
         state.decoder.clone(),
-        state.data_available.clone(),
+        data_available.clone(),
     );
     sink.append(streaming_source);
     
-    // Start background streaming task
-    let buffer = state.buffer.clone();
-    let is_stream_ended = state.is_stream_ended.clone();
-    let data_available = state.data_available.clone();
-    
-    tokio::spawn(async move {
+    // Spawn streaming task
+    let _stream_handle = tokio::spawn(async move {
         let mut bytes_stream = response.bytes_stream();
+        let mut current_size = 0;
+
         while let Some(chunk) = bytes_stream.next().await {
             if let Ok(data) = chunk {
-                let mut buffer = buffer.lock().unwrap();
-                buffer.extend_from_slice(&data);
-                
-                // Signal new data available
-                let (lock, cvar) = &*data_available;
-                let mut available = lock.lock().unwrap();
-                *available = true;
-                cvar.notify_one();
+                current_size += data.len();
+
+                // Update buffer in separate scope
+                {
+                    let mut buffer = buffer.lock().unwrap();
+                    buffer.extend_from_slice(&data);
+                }
+
+                // Send buffer progress
+                if content_length > 0 {
+                    let progress = current_size as f32 / content_length as f32;
+                    let _ = tx_clone.send(PlaybackEvent::BufferUpdate { buffer_progress: progress }).await;
+                }
+
+                // Check seek target in separate scope
+                let should_send_ready = {
+                    if let Some(target) = *seek_target.lock().unwrap() {
+                        let buffered = *buffered_duration.lock().unwrap();
+                        buffered >= target
+                    } else {
+                        false
+                    }
+                };
+
+                if should_send_ready {
+                    let _ = tx_clone.send(PlaybackEvent::BufferSeekReady).await;
+                    *seek_target.lock().unwrap() = None;
+                }
+
+                // Signal new data in separate scope
+                {
+                    let (lock, cvar) = &*data_available;
+                    let mut available = lock.lock().unwrap();
+                    *available = true;
+                    cvar.notify_one();
+                }
             }
         }
         is_stream_ended.store(true, Ordering::Relaxed);
     });
 
+    // Start playback
     sink.play();
     *sink_guard = Some(sink);
 
@@ -266,7 +432,7 @@ pub async fn play_url_stream<R: Runtime>(
 
 #[tauri::command]
 pub async fn play_local_file<R: Runtime>(
-    _app: tauri::AppHandle<R>, // Add app parameter for consistency
+    app: tauri::AppHandle<R>,
     state: State<'_, AudioState>, 
     file_path: String
 ) -> std::result::Result<(), AppError> {
@@ -290,40 +456,24 @@ pub async fn play_local_file<R: Runtime>(
 
     sink.append(source);
 
-    *sink_guard = Some(sink);
+    // Create new event sender if needed
+    let mut tx_guard = state.progress_tx.lock().unwrap();
+    if tx_guard.is_none() {
+        let (tx, mut rx) = mpsc::channel(32);
+        *tx_guard = Some(tx.clone());
 
-    Ok(())
-}
+        // Spawn event handler
+        let app_handle = app.clone();
+        tokio::spawn(async move {
+            while let Some(event) = rx.recv().await {
+                let _ = app_handle.emit("playback_event", event);
+            }
+        });
 
-#[tauri::command]
-pub async fn play_arraybuffer<R: Runtime>(
-    app: tauri::AppHandle<R>,
-    state: State<'_, AudioState>,
-    buffer: Vec<u8>,
-) -> std::result::Result<(), AppError> {
-    let duration: u64;
-    {
-        // Clone buffer for first usage
-        let cursor = Cursor::new(buffer.clone());
-        let source = Decoder::new(cursor).map_err(|e| AppError::DecodeError(e.to_string()))?;
-        duration = source.total_duration()
-            .ok_or_else(|| AppError::DecodeError("Could not get duration".to_string()))?
-            .as_millis() as u64;
+        // Start progress update task using the helper function
+        spawn_progress_task(state.sink.clone(), tx.clone(), app.clone());
     }
 
-    let mut sink_guard = state.sink.lock().unwrap();
-    if let Some(sink) = sink_guard.take() {
-        sink.stop();
-    }
-
-    // Use original buffer here
-    let cursor = Cursor::new(buffer);
-    let source = Decoder::new(cursor).map_err(|e| AppError::DecodeError(e.to_string()))?;
-    let sink = Sink::try_new(&state.stream_handle)
-        .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
-
-    app.emit("update_duration", duration)?;
-    sink.append(source);
     *sink_guard = Some(sink);
 
     Ok(())
@@ -390,18 +540,26 @@ pub fn get_volume(state: State<AudioState>) -> std::result::Result<f32, AppError
 }
 
 #[tauri::command]
-pub fn set_playback_progress(state: State<AudioState>, progress: f32) -> std::result::Result<(), AppError> {
+pub fn set_playback_progress(
+    _app: tauri::AppHandle<impl Runtime>,
+    state: State<AudioState>, 
+    progress: f32
+) -> std::result::Result<(), AppError> {
     let mut sink = state.sink.lock().unwrap();
+    let duration = Duration::from_secs_f32(progress);
 
     if let Some(s) = sink.as_mut() {
-        let duration = Duration::from_secs_f32(progress);
-        s.try_seek(duration)
-            .map_err(|e| AppError::SeekError(e.to_string()))?;
-        Ok(())
+        match s.try_seek(duration) {
+            Ok(_) => Ok(()),
+            Err(rodio::source::SeekError::NotSupported { .. }) => {
+                *state.seek_target.lock().unwrap() = Some(duration);
+                s.pause();
+                Ok(())
+            },
+            Err(e) => Err(AppError::SeekError(e.to_string()))
+        }
     } else {
-        Err(AppError::InvalidOperation(
-            "No active playback to set progress".to_string(),
-        ))
+        Err(AppError::InvalidOperation("No active playback to set progress".to_string()))
     }
 }
 

@@ -4,23 +4,21 @@ import Card from '../components/base/card';
 import Input from '../components/base/input';
 import Select from '../components/base/select';
 import Switch from '../components/base/switch';
-import { localeJotai, settingsJotai, storagesConfigJotai } from '../jotais/settings';
+import { localeJotai, storagesConfigJotai } from '../jotais/settings';
 import { SetStateAction, useAtom, useAtomValue, useSetAtom, WritableAtom } from 'jotai';
 import type { LocalConfig } from '../storages/local';
 import { useCallback, useEffect, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { storagesJotai } from '../jotais/storage';
-import Tooltip from '../components/base/tooltip';
 import Modal from '../components/base/modal';
 import md5 from 'md5';
 import type { NCMConfig, NCMQuality } from '../storages/ncm';
 import Spinner from '../components/base/spinner';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { langMap } from '../../locales';
-import { clearCache, getCacheSize } from '../utils/cache.';
+import { clearCache, getCacheSize } from '../utils/cache';
 import { nowPlayingBarJotai } from '../jotais/play';
 
-const streamingJotai = focusAtom(settingsJotai, (optic) => optic.prop('streaming'));
 const localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local')) as unknown as WritableAtom<LocalConfig, [SetStateAction<LocalConfig>], void>;
 const ncmStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('ncm')) as unknown as WritableAtom<NCMConfig, [SetStateAction<NCMConfig>], void>;
 const ncmCookieJotai = focusAtom(ncmStorageConfigJotai, (optic) => optic.prop('cookie'));
@@ -50,7 +48,6 @@ export default function Settings () {
     const localScanned = useAtomValue(localScannedJotai);
     const setNCMCookie = useSetAtom(ncmCookieJotai);
     const [ncmLoggedIn, setNCMloggedIn] = useAtom(ncmLoggedInJotai);
-    const [streaming, setStreaming] = useAtom(streamingJotai);
     const barOpen = useAtomValue(nowPlayingBarJotai);
     const [ncmProfile, setNCMProfile] = useAtom(ncmProfileJotai);
     const [ncmAPI, setNcmAPI] = useAtom(ncmApiJotai);
@@ -181,17 +178,6 @@ export default function Settings () {
                 <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='Play' />
                 </span>
-                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
-                    <div className='flex flex-row items-center gap-4'>
-                        <span className='i-fluent:stream-24-regular w-5 h-5' />
-                        <span className='grow-1'>
-                            <FormattedMessage defaultMessage='Use streaming (Experimental)' />
-                        </span>
-                        <Tooltip content={intl.formatMessage({ defaultMessage: 'Streaming does not currently support adjusting playback progress'})} placement='left' tooltipClassName='min-w-50'>
-                            <Switch checked={streaming} onChange={setStreaming} />
-                        </Tooltip>
-                    </div>
-                </Card>
                 <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
                     <div className='flex flex-row items-center gap-4'>
                         <span className='i-fluent:database-arrow-down-20-regular w-5 h-5' />
