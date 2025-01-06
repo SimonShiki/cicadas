@@ -1,11 +1,9 @@
 mod audio;
-mod cache_manager;
 mod error;
 mod local_scanner;
 mod media_control;
 
 use audio::AudioState;
-use cache_manager::{CacheManager, CacheManagerState};
 use media_control::MediaControlState;
 use rodio::OutputStreamBuilder;
 use std::sync::atomic::AtomicBool;
@@ -49,10 +47,6 @@ pub async fn run() {
         .manage(audio_state)
         .manage(media_control_state)
         .setup(|app| {
-            let cache_dir = app.path().app_cache_dir().unwrap();
-            let cache_manager = Arc::new(CacheManager::new(cache_dir, 1024 * 1024 * 1024)); // 1GB cache limit
-            app.manage(CacheManagerState(cache_manager));
-
             let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
             let pause_resume =
                 MenuItemBuilder::with_id("pause_resume", "Pause/Resume").build(app)?;
@@ -120,9 +114,7 @@ pub async fn run() {
             media_control::update_media_metadata,
             media_control::update_playback_status,
             local_scanner::get_song_buffer,
-            local_scanner::scan_folder,
-            cache_manager::get_cache_size,
-            cache_manager::clear_cache,
+            local_scanner::scan_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -16,7 +16,6 @@ import type { NCMConfig, NCMQuality } from '../storages/ncm';
 import Spinner from '../components/base/spinner';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { langMap } from '../../locales';
-import { clearCache, getCacheSize } from '../utils/cache';
 import { nowPlayingBarJotai } from '../jotais/play';
 
 const localStorageConfigJotai = focusAtom(storagesConfigJotai, (optic) => optic.prop('local')) as unknown as WritableAtom<LocalConfig, [SetStateAction<LocalConfig>], void>;
@@ -41,8 +40,6 @@ export default function Settings () {
     const [ncmAuthModalOpen, setNcmAuthModalOpen] = useState(false);
     const [qr, setQr] = useState(false);
     const [qrUrl, setQrUrl] = useState('');
-    const [cacheSize, setCacheSize] = useState(-1);
-    const [clearingCache, setClearingCache] = useState(false);
     const {instance: localStorage} = useAtomValue(localStorageJotai);
     const ncmConfig = useAtomValue(ncmStorageConfigJotai);
     const localScanned = useAtomValue(localScannedJotai);
@@ -71,19 +68,6 @@ export default function Settings () {
         { value: 'sky', label: intl.formatMessage({ defaultMessage: 'Immersive Surround' }) },
         { value: 'jymaster', label: intl.formatMessage({ defaultMessage: 'Ultra HD Mastering' }) }
     ];
-
-    useEffect(() => {
-        if (cacheSize > 0) return;
-        getCacheSize().then(setCacheSize);
-    }, [cacheSize]);
-
-    useEffect(() => {
-        if (!clearingCache) return;
-        clearCache().then(() => {
-            setCacheSize(-1);
-            setClearingCache(false);
-        });
-    }, [clearingCache]);
 
     useEffect(() => {
         if (!qr) {
@@ -178,24 +162,6 @@ export default function Settings () {
                 <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='Play' />
                 </span>
-                <Card className='flex flex-col gap-2 color-text-pri dark:color-text-dark-pri'>
-                    <div className='flex flex-row items-center gap-4'>
-                        <span className='i-fluent:database-arrow-down-20-regular w-5 h-5' />
-                        <span className='grow-1'>
-                            <FormattedMessage defaultMessage='Cache' />
-                        </span>
-                        <span className='font-size-sm color-text-sec dark:color-text-dark-sec'>{cacheSize < 0 ? (
-                            <FormattedMessage defaultMessage='Loading...' />
-                        ) : (
-                            <FormattedMessage defaultMessage='{megabyte} MB' values={{ megabyte: Math.ceil(cacheSize / 1048576)}} />
-                        )}</span>
-                        <Button disabled={clearingCache} onClick={() => {
-                            setClearingCache(true);
-                        }}>
-                            <FormattedMessage defaultMessage='Clear' />
-                        </Button>
-                    </div>
-                </Card>
                 <span className='color-text-pri dark:color-text-dark-pri font-size-sm my-2'>
                     <FormattedMessage defaultMessage='Local' />
                 </span>
