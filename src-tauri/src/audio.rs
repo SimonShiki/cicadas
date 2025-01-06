@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use lofty::file::AudioFile;
 use lofty::probe::Probe;
-use rodio::{Decoder, OutputStreamHandle, Sink, Source};
+use rodio::{Decoder, Sink, Source, mixer::Mixer};
 use std::fs::File;
 use std::io::{BufReader, Cursor, Read, Seek, SeekFrom};
 use std::path::Path;
@@ -23,7 +23,7 @@ pub enum PlaybackEvent {
 
 pub struct AudioState {
     pub sink: Arc<Mutex<Option<Sink>>>,
-    pub stream_handle: OutputStreamHandle,
+    pub stream: Arc<Mixer<f32>>,
     pub buffer: Arc<Mutex<Vec<u8>>>,
     pub is_stream_ended: Arc<AtomicBool>,
     pub decoder: Arc<Mutex<Option<Decoder<Cursor<Vec<u8>>>>>>,
@@ -76,7 +76,7 @@ impl StreamingSource {
             
             // Calculate bytes per second (2 bytes per sample)
             let bytes_per_second = self.sample_rate as f64 * self.channels as f64 * 2.0;
-            let target_position = (pos.as_secs_f64() * bytes_per_second / 7.3475) as usize;
+            let target_position = (pos.as_secs_f64() * bytes_per_second / 7.34) as usize;
             
             if target_position >= buffer.len() {
                 return Err(rodio::source::SeekError::NotSupported {
@@ -195,12 +195,12 @@ impl Iterator for StreamingSource {
 }
 
 impl Source for StreamingSource {
-    fn current_frame_len(&self) -> Option<usize> {
+    fn current_span_len(&self) -> Option<usize> {
         self.decoder
             .lock()
             .unwrap()
             .as_ref()
-            .and_then(|d| d.current_frame_len())
+            .and_then(|d| d.current_span_len())
     }
 
     fn channels(&self) -> u16 {
@@ -364,9 +364,7 @@ pub async fn play_url_stream<R: Runtime>(
     }
     *state.decoder.lock().unwrap() = None;
 
-    let sink = Sink::try_new(&state.stream_handle)
-        .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
-
+    let sink = Sink::connect_new(&state.stream);
     let streaming_source = StreamingSource::new(
         buffer.clone(),
         is_stream_ended.clone(),
@@ -451,9 +449,7 @@ pub async fn play_local_file<R: Runtime>(
 
     let source = Decoder::new(buf_reader).map_err(|e| AppError::DecodeError(e.to_string()))?;
 
-    let sink = Sink::try_new(&state.stream_handle)
-        .map_err(|e| AppError::SinkCreationError(e.to_string()))?;
-
+    let sink = Sink::connect_new(&state.stream);
     sink.append(source);
 
     // Create new event sender if needed

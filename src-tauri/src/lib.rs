@@ -7,7 +7,7 @@ mod media_control;
 use audio::AudioState;
 use cache_manager::{CacheManager, CacheManagerState};
 use media_control::MediaControlState;
-use rodio::OutputStream;
+use rodio::OutputStreamBuilder;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Condvar, Mutex, Once};
 use std::time::Duration;
@@ -20,10 +20,10 @@ use tauri::{
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 #[tokio::main]
 pub async fn run() {
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    let stream = OutputStreamBuilder::open_default_stream().unwrap();
     let audio_state = AudioState {
         sink: Arc::new(Mutex::new(None)),
-        stream_handle,
+        stream: stream.mixer(),
         buffer: Arc::new(Mutex::new(Vec::new())),
         is_stream_ended: Arc::new(AtomicBool::new(false)),
         decoder: Arc::new(Mutex::new(None)),
